@@ -289,6 +289,9 @@ export async function POST(request: NextRequest) {
       /_[xy]_/i,
       /_\w{2,}/,
       /\w+\.\w+/,
+      /\bSegment\b/i,
+      /\bVector\b/i,
+      /\bLine\b(?!.*Slider)/i,
     ];
     let commands = (ggbResult.ggbCommands || []).filter(
       (cmd: string) => !invalidPatterns.some((p) => p.test(cmd))

@@ -83,9 +83,11 @@ export default function GeoGebraViewer({ ggbCommands, physicsType }: GeoGebraVie
               for (const [bad, good] of Object.entries(nameMap)) {
                 s = s.replace(new RegExp(`\\b${bad}\\b`, "g"), good);
               }
-              // Skip commands with unsupported syntax
+              // Skip commands that don't work in embed API
               if (/\w+\.\w+/.test(s) && !s.includes("Slider")) return null;
-              if (/Segment\([^)]*\([^)]*\)/.test(s)) return null;
+              if (/\bSegment\b/i.test(s)) return null;
+              if (/\bVector\b/i.test(s)) return null;
+              if (/\bLine\b/i.test(s) && !s.includes("Slider")) return null;
               return s;
             }).filter(Boolean) as string[];
 
