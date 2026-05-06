@@ -71,12 +71,29 @@ export default function GeoGebraViewer({ ggbCommands, physicsType }: GeoGebraVie
         appletOnLoad: (api: any) => {
           setLoaded(true);
           if (ggbCommands.length > 0) {
-            ggbCommands.forEach((cmd) => {
+            const nameMap: Record<string, string> = {
+              spring: "s1", mass: "m0", force: "f0", gravity: "g0",
+              friction: "fr0", velocity: "vel", acceleration: "acc",
+              energy: "e0", momentum: "mom", block: "blk", ball: "b0",
+              wall: "w0", ground: "gnd", start: "s0", top: "t0",
+              bottom: "bt0", pivot: "p0", bob: "b1",
+            };
+            const sanitized = ggbCommands.map((cmd) => {
+              let s = cmd;
+              for (const [bad, good] of Object.entries(nameMap)) {
+                s = s.replace(new RegExp(`\\b${bad}\\b`, "g"), good);
+              }
+              // Skip commands with unsupported syntax
+              if (/\w+\.\w+/.test(s) && !s.includes("Slider")) return null;
+              if (/Segment\([^)]*\([^)]*\)/.test(s)) return null;
+              return s;
+            }).filter(Boolean) as string[];
+
+            sanitized.forEach((cmd) => {
               try {
-                const success = api.evalCommand(cmd);
-                if (!success) console.warn("GGB command failed:", cmd);
-              } catch (e) {
-                console.error("GGB command error:", cmd, e);
+                api.evalCommand(cmd);
+              } catch {
+                // GeoGebra embed API may reject some commands silently
               }
             });
             try {

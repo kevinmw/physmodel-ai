@@ -273,7 +273,14 @@ export async function POST(request: NextRequest) {
       ggbResult = { ggbCommands: [] };
     }
 
-    // Filter invalid commands
+    // Sanitize and filter commands
+    const nameMap: Record<string, string> = {
+      spring: "s1", mass: "m0", force: "f0", gravity: "g0",
+      friction: "fr0", velocity: "vel", acceleration: "acc",
+      energy: "e0", momentum: "mom", block: "blk", ball: "b0",
+      wall: "w0", ground: "gnd", start: "s0", top: "t0",
+      bottom: "bt0", pivot: "p0", bob: "b1",
+    };
     const invalidPatterns = [
       /SetCaption/i,
       /SetFixed/i,
@@ -281,15 +288,25 @@ export async function POST(request: NextRequest) {
       /SetPointSize/i,
       /_[xy]_/i,
       /_\w{2,}/,
+      /\w+\.\w+/,
     ];
-    const validCommands = (ggbResult.ggbCommands || []).filter(
+    let commands = (ggbResult.ggbCommands || []).filter(
       (cmd: string) => !invalidPatterns.some((p) => p.test(cmd))
     );
+    // Rename reserved/conflicting variable names
+    commands = commands.map((cmd: string) => {
+      let sanitized = cmd;
+      for (const [bad, good] of Object.entries(nameMap)) {
+        const regex = new RegExp(`\\b${bad}\\b`, "g");
+        sanitized = sanitized.replace(regex, good);
+      }
+      return sanitized;
+    });
 
     return NextResponse.json({
       analysis: {
         ...analysisResult,
-        ggbCommands: validCommands,
+        ggbCommands: commands,
         description: ggbResult.description || analysisResult.description || "",
       },
     });
