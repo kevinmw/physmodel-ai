@@ -23,10 +23,18 @@ declare global {
 
 export default function GeoGebraViewer({ ggbCommands, physicsType }: GeoGebraViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const appletRef = useRef<HTMLDivElement | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const loadedDataId = useRef<string | null>(null);
+
+  const cleanupApplet = useCallback(() => {
+    if (appletRef.current && appletRef.current.parentNode) {
+      appletRef.current.parentNode.removeChild(appletRef.current);
+    }
+    appletRef.current = null;
+  }, []);
 
   const injectGeoGebra = useCallback(() => {
     if (!containerRef.current) return;
@@ -34,17 +42,22 @@ export default function GeoGebraViewer({ ggbCommands, physicsType }: GeoGebraVie
     if (loadedDataId.current === dataId) return;
     loadedDataId.current = dataId;
 
-    containerRef.current.innerHTML = "";
+    cleanupApplet();
+
+    const container = containerRef.current;
+    const w = container.clientWidth;
+    const h = Math.max(500, Math.min(700, window.innerHeight * 0.6));
 
     const appletDiv = document.createElement("div");
     appletDiv.id = "ggb-applet";
-    containerRef.current.appendChild(appletDiv);
+    container.appendChild(appletDiv);
+    appletRef.current = appletDiv;
 
     const ggbApp = new (window as any).GGBApplet(
       {
         appName: "classic",
-        width: 800,
-        height: 500,
+        width: w,
+        height: h,
         showToolBar: false,
         showAlgebraInput: false,
         showMenuBar: false,
@@ -78,19 +91,31 @@ export default function GeoGebraViewer({ ggbCommands, physicsType }: GeoGebraVie
       true
     );
     ggbApp.inject("ggb-applet");
-  }, [ggbCommands]);
+  }, [ggbCommands, cleanupApplet]);
 
   useEffect(() => {
-    if (typeof (window as any).GGBApplet === "undefined") {
-      const script = document.createElement("script");
-      script.src = "https://www.geogebra.org/apps/deployggb.js";
-      script.async = true;
-      script.onload = () => injectGeoGebra();
-      document.head.appendChild(script);
-    } else {
-      injectGeoGebra();
-    }
-  }, [injectGeoGebra]);
+    setLoaded(false);
+    const loadAndInject = () => {
+      if (typeof (window as any).GGBApplet === "undefined") {
+        const existingScript = document.querySelector('script[src*="deployggb.js"]');
+        if (existingScript) {
+          existingScript.addEventListener("load", () => injectGeoGebra());
+        } else {
+          const script = document.createElement("script");
+          script.src = "https://www.geogebra.org/apps/deployggb.js";
+          script.async = true;
+          script.onload = () => injectGeoGebra();
+          document.head.appendChild(script);
+        }
+      } else {
+        injectGeoGebra();
+      }
+    };
+    loadAndInject();
+    return () => {
+      cleanupApplet();
+    };
+  }, [injectGeoGebra, cleanupApplet]);
 
   const handlePlay = useCallback(() => {
     if (window.ggbApplet) {
@@ -158,11 +183,13 @@ export default function GeoGebraViewer({ ggbCommands, physicsType }: GeoGebraVie
         </div>
       </div>
 
-      <div ref={containerRef} className="w-full flex items-center justify-center bg-gray-50 min-h-[500px]">
+      <div ref={containerRef} className="w-full bg-gray-50 relative" style={{ minHeight: "500px" }}>
         {!loaded && (
-          <div className="text-center text-gray-400">
-            <div className="animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-            <p>加载 GeoGebra...</p>
+          <div className="text-center text-gray-400 absolute inset-0 flex items-center justify-center bg-gray-50 z-10 pointer-events-none">
+            <div>
+              <div className="animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p>Loading GeoGebra...</p>
+            </div>
           </div>
         )}
       </div>

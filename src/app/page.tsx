@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import PhotoCapture from "@/components/PhotoCapture";
 import AnalysisPanel from "@/components/AnalysisPanel";
 import GeoGebraViewer from "@/components/GeoGebraViewer";
@@ -47,10 +47,18 @@ export default function Home() {
     }
   }, []);
 
-  // Check API config on mount
-  useState(() => {
+  // Load history from localStorage on mount
+  useEffect(() => {
     checkApiConfig();
-  });
+    try {
+      const savedHistory = localStorage.getItem("physmodel_history");
+      if (savedHistory) {
+        setHistory(JSON.parse(savedHistory));
+      }
+    } catch {
+      // ignore
+    }
+  }, [checkApiConfig]);
 
   const handleImageCapture = useCallback(async (dataUrl: string) => {
     setImageUrl(dataUrl);
@@ -100,11 +108,15 @@ export default function Home() {
     const item: HistoryItem = {
       id: Date.now().toString(),
       timestamp: Date.now(),
-      thumbnail: imageUrl || "",
+      thumbnail: "",
       analysis,
     };
-    setHistory((prev) => [item, ...prev]);
-  }, [analysis, imageUrl]);
+    setHistory((prev) => {
+      const updated = [item, ...prev].slice(0, 50);
+      localStorage.setItem("physmodel_history", JSON.stringify(updated));
+      return updated;
+    });
+  }, [analysis]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -147,7 +159,7 @@ export default function Home() {
       )}
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className={`mx-auto px-4 py-6 ${activeTab === "model" ? "max-w-full" : "max-w-6xl"}`}>
         {/* Tab Navigation */}
         <div className="flex gap-2 mb-6">
           {[
@@ -200,43 +212,78 @@ export default function Home() {
 
         {activeTab === "model" && (
           <div className="space-y-4">
-            <AnalysisPanel analysis={analysis} />
+            {analysis && (
+              <div className="flex items-center justify-between">
+                <AnalysisPanel analysis={analysis} />
+                <button
+                  onClick={handleSaveToHistory}
+                  className="shrink-0 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition-colors ml-4"
+                >
+                  保存到历史
+                </button>
+              </div>
+            )}
             <GeoGebraViewer
               ggbCommands={analysis?.ggbCommands || []}
               physicsType={analysis?.physicsType || ""}
             />
-            {analysis && (
-              <div className="flex gap-3">
-                <button
-                  onClick={handleSaveToHistory}
-                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition-colors"
-                >
-                  💾 保存到历史
-                </button>
-              </div>
-            )}
           </div>
         )}
 
         {/* History */}
         {history.length > 0 && (
           <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-3">📜 历史记录</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">历史记录 ({history.length})</h3>
+              <button
+                onClick={() => {
+                  setHistory([]);
+                  localStorage.removeItem("physmodel_history");
+                }}
+                className="text-xs text-red-500 hover:text-red-700 px-2 py-1"
+              >
+                清空全部
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {history.map((item) => (
-                <button
+                <div
                   key={item.id}
-                  onClick={() => {
-                    setAnalysis(item.analysis);
-                    setActiveTab("model");
-                  }}
-                  className="bg-white rounded-xl p-3 shadow-sm border text-left hover:shadow-md transition-shadow"
+                  className="bg-white rounded-xl p-3 shadow-sm border hover:shadow-md transition-shadow group"
                 >
-                  <div className="font-medium text-sm">{item.analysis.physicsType}</div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(item.timestamp).toLocaleString()}
-                  </div>
-                </button>
+                  <button
+                    onClick={() => {
+                      setAnalysis(item.analysis);
+                      setActiveTab("model");
+                    }}
+                    className="w-full text-left"
+                  >
+                    <div className="font-medium text-sm">{item.analysis.description || item.analysis.physicsType}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {new Date(item.timestamp).toLocaleString()}
+                    </div>
+                    {item.analysis.concepts.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {item.analysis.concepts.slice(0, 3).map((c, i) => (
+                          <span key={i} className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">{c}</span>
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setHistory((prev) => {
+                        const updated = prev.filter((h) => h.id !== item.id);
+                        localStorage.setItem("physmodel_history", JSON.stringify(updated));
+                        return updated;
+                      });
+                    }}
+                    className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                    style={{ position: "relative", float: "right", marginTop: "-40px" }}
+                  >
+                    &times;
+                  </button>
+                </div>
               ))}
             </div>
           </div>
