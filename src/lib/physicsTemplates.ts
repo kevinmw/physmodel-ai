@@ -154,6 +154,89 @@ const TEMPLATES: Record<string, PhysicsTemplate> = {
       "Curve(t, If(h - 0.5*9.8*t^2>0, h - 0.5*9.8*t^2, 0), t, 0, 5)",
     ],
   },
+
+  damped_oscillation: {
+    type: "damped_oscillation",
+    commands: () => [
+      "A = Slider(1, 5, 0.1)",
+      "b = Slider(0.1, 2, 0.1)",
+      "omega = Slider(0.5, 5, 0.5)",
+      "t = Slider(0, 10, 0.1)",
+      "P = (t, A*exp(-b*t)*sin(omega*t))",
+      "Curve(t, A*exp(-b*t)*sin(omega*t), t, 0, 10)",
+      "Curve(t, A*exp(-b*t), t, 0, 10)",
+      "Curve(t, -A*exp(-b*t), t, 0, 10)",
+    ],
+  },
+
+  uniform_acceleration: {
+    type: "uniform_acceleration",
+    commands: () => [
+      "v0 = Slider(0, 20, 1)",
+      "a = Slider(-5, 5, 0.5)",
+      "t = Slider(0, 10, 0.1)",
+      "P = (t, v0 + a*t)",
+      "Curve(t, v0 + a*t, t, 0, 10)",
+      "Curve(t, v0*t + 0.5*a*t^2, t, 0, 10)",
+    ],
+  },
+
+  binary_star: {
+    type: "binary_star",
+    commands: () => [
+      "m1 = Slider(1, 10, 0.5)",
+      "m2 = Slider(1, 10, 0.5)",
+      "d = Slider(2, 10, 0.5)",
+      "t = Slider(0, 10, 0.1)",
+      "r1 = m2/(m1+m2)*d",
+      "r2 = m1/(m1+m2)*d",
+      "P = (r1*cos(t), r1*sin(t))",
+      "Q = (-r2*cos(t), -r2*sin(t))",
+      "C1 = Circle((0,0), r1)",
+      "C2 = Circle((0,0), r2)",
+    ],
+  },
+
+  electric_deflection: {
+    type: "electric_deflection",
+    commands: () => [
+      "v0 = Slider(1, 10, 0.5)",
+      "E = Slider(1, 10, 0.5)",
+      "q = Slider(0.5, 5, 0.5)",
+      "m = Slider(0.5, 5, 0.5)",
+      "t = Slider(0, 10, 0.1)",
+      "a = q*E/m",
+      "P = (v0*t, 0.5*a*t^2)",
+      "Curve(v0*t, 0.5*a*t^2, t, 0, 10)",
+    ],
+  },
+
+  forced_oscillation: {
+    type: "forced_oscillation",
+    commands: () => [
+      "f0 = Slider(0.5, 5, 0.5)",
+      "f = Slider(0.5, 5, 0.5)",
+      "A0 = Slider(0.5, 3, 0.5)",
+      "gamma = Slider(0.1, 2, 0.1)",
+      "t = Slider(0, 10, 0.1)",
+      "A = A0/sqrt((f0^2-f^2)^2 + (gamma*f)^2)",
+      "P = (t, A*sin(f*t))",
+      "Curve(t, A*sin(f*t), t, 0, 10)",
+    ],
+  },
+
+  lissajous: {
+    type: "lissajous",
+    commands: () => [
+      "Ax = Slider(1, 5, 0.5)",
+      "Ay = Slider(1, 5, 0.5)",
+      "fx = Slider(1, 5, 1)",
+      "fy = Slider(1, 5, 1)",
+      "t = Slider(0, 10, 0.1)",
+      "P = (Ax*sin(fx*t), Ay*sin(fy*t))",
+      "Curve(Ax*sin(fx*t), Ay*sin(fy*t), t, 0, 10)",
+    ],
+  },
 };
 
 export function getTemplateCommands(
