@@ -40,7 +40,7 @@ export default function Home() {
     if (saved) {
       try {
         const config = JSON.parse(saved);
-        setApiConfigured(!!(config.vlmUrl && config.vlmKey && config.llmUrl && config.llmKey));
+        setApiConfigured(!!(config.vlmUrl && config.vlmKey));
       } catch {
         setApiConfigured(false);
       }

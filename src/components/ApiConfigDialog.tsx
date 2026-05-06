@@ -108,7 +108,7 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
 
         {/* LLM Config */}
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-purple-600 mb-3">💬 文本语言模型 (LLM)</h3>
+          <h3 className="text-sm font-semibold text-purple-600 mb-3">💬 文本语言模型 (LLM) <span className="text-xs font-normal text-gray-400">可选 - 仅用于未识别的物理类型</span></h3>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">API 地址</label>
@@ -147,7 +147,7 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
         <div className="flex gap-3">
           <button
             onClick={handleSave}
-            disabled={!config.vlmUrl || !config.vlmKey || !config.llmUrl || !config.llmKey}
+            disabled={!config.vlmUrl || !config.vlmKey}
             className="flex-1 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors"
           >
             {saved ? "✅ 已保存" : "保存配置"}

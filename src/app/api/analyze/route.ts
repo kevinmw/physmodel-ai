@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getTemplateCommands, isSupportedType } from "@/lib/physicsTemplates";
 
 interface ApiConfig {
   vlmUrl: string;
@@ -179,9 +180,9 @@ export async function POST(request: NextRequest) {
       config = null;
     }
 
-    if (!config || !config.vlmUrl || !config.vlmKey || !config.llmUrl || !config.llmKey) {
+    if (!config || !config.vlmUrl || !config.vlmKey) {
       return NextResponse.json(
-        { error: "请先在设置中配置API地址和密钥" },
+        { error: "请先在设置中配置VLM的API地址和密钥" },
         { status: 400 }
       );
     }
@@ -234,7 +235,32 @@ export async function POST(request: NextRequest) {
       analysisResult = { ocrText: vlmContent, physicsType: "other" };
     }
 
-    // Step 2: LLM - 生成GeoGebra命令
+    // Step 2: Use template for known physics types, fall back to LLM for "other"
+    const physicsType = analysisResult.physicsType || "other";
+    const knownValues = analysisResult.knownValues || {};
+
+    if (physicsType !== "other" && isSupportedType(physicsType)) {
+      const commands = getTemplateCommands(physicsType, knownValues);
+      return NextResponse.json({
+        analysis: {
+          ...analysisResult,
+          ggbCommands: commands || [],
+          description: analysisResult.description || "",
+        },
+      });
+    }
+
+    // Fallback: LLM for unsupported types
+    if (!config.llmUrl || !config.llmKey) {
+      return NextResponse.json({
+        analysis: {
+          ...analysisResult,
+          ggbCommands: [],
+          description: analysisResult.description || "该类型暂不支持自动建模，请尝试示例中的物理模型",
+        },
+      });
+    }
+
     const llmResponse = await fetch(config.llmUrl, {
       method: "POST",
       headers: {
