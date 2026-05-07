@@ -35,7 +35,6 @@ export default function DesmosViewer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [showForces, setShowForces] = useState(true);
-  const loadedExprsId = useRef<string | null>(null);
 
   const destroyCalc = useCallback(() => {
     mountedRef.current = false;
@@ -54,12 +53,8 @@ export default function DesmosViewer({
   const initCalculator = useCallback(() => {
     if (!containerRef.current || !window.Desmos) return;
 
-    const exprsId = `${dimension}|${editable
-      ? expressions.map((e) => e.id).join("|")
-      : expressions.map((e) => e.id + ":" + e.latex).join("|")}`;
-    if (exprsId === loadedExprsId.current && calculatorRef.current) return;
-    loadedExprsId.current = exprsId;
-
+    // Always destroy and recreate when called — don't rely on cache matching
+    // for fresh expression data from regenerated templates
     destroyCalc();
     mountedRef.current = true;
 
@@ -207,7 +202,6 @@ export default function DesmosViewer({
   }, [isPlaying, expressions]);
 
   const handleReset = useCallback(() => {
-    loadedExprsId.current = null;
     setLoaded(false);
     setIsPlaying(false);
     initCalculator();

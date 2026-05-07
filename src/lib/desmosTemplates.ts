@@ -69,7 +69,7 @@ function buildForceVector(
 ): DesmosExpr {
   return {
     id,
-    latex: `(${ox}+t(${dx}),\\ ${oy}+t(${dy}))`,
+    latex: `(${ox}+u(${dx}),\\ ${oy}+u(${dy}))`,
     parametricDomain: { min: "0", max: "1" },
     color,
     label,
@@ -87,7 +87,7 @@ function buildForceVector3D(
 ): DesmosExpr {
   return {
     id,
-    latex: `(${ox}+t(${dx}),\\ ${oy}+t(${dy}),\\ ${oz}+t(${dz}))`,
+    latex: `(${ox}+u(${dx}),\\ ${oy}+u(${dy}),\\ ${oz}+u(${dz}))`,
     parametricDomain: { min: "0", max: "1" },
     color,
     label,
@@ -104,9 +104,11 @@ function makeVTGraph(
   tMax: number,
   label?: string
 ): DesmosExpr[] {
+  // Replace 's' parametric variable with 'x' for standard y=f(x) plotting
+  // so 's' isn't treated as an undefined free variable
+  const vAsFunctionOfX = vLatex.replace(/s\b/g, "x");
   return [
     { id: "tgraph_axis", latex: `x=${xOffset}`, color: C.GRAY, lineStyle: "DASHED", hidden: true },
-    { id: "tgraph_v", latex: `y=${vLatex}`, color: C.ORANGE },
     { id: "tgraph_v_curve", latex: `(s+${xOffset},\\ ${vLatex})`, parametricDomain: { min: "0", max: String(tMax) }, color: C.ORANGE, lineStyle: "SOLID" },
     { id: "tgraph_origin", latex: `(${xOffset},0)`, color: C.GRAY, pointStyle: "CROSS", label: label || "t", showLabel: true },
   ];
@@ -118,8 +120,9 @@ function makeSTGraph(
   sLatex: string,
   tMax: number
 ): DesmosExpr[] {
+  const sAsFunctionOfX = sLatex.replace(/s\b/g, "x");
   return [
-    { id: "tgraph_s", latex: `y=${sLatex}`, color: C.GREEN, lineStyle: "DASHED" },
+    { id: "tgraph_s", latex: `y=${sAsFunctionOfX}`, color: C.GREEN, lineStyle: "DASHED" },
     { id: "tgraph_s_curve", latex: `(s+${xOffset},\\ ${sLatex})`, parametricDomain: { min: "0", max: String(tMax) }, color: C.GREEN, lineStyle: "DASHED" },
   ];
 }
@@ -150,6 +153,7 @@ const TEMPLATES: Record<string, TemplateFn> = {
           lineStyle: "DASHED",
         },
         buildForceVector("force_g", "v_{0}\\cos(\\theta)t", "v_{0}\\sin(\\theta)t-\\frac{g}{2}t^{2}", "0", "-2", C.PURPLE, "mg"),
+        { id: "g_def", latex: `g=${g}`, hidden: true },
       ],
       viewport: { left: -xRange * 0.05, right: xRange * 1.1, bottom: -yMax * 0.15, top: yMax * 1.3 },
     };
