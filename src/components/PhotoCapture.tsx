@@ -91,8 +91,8 @@ export default function PhotoCapture({ onCapture, loading }: PhotoCaptureProps) 
           }`}
         >
           <div className="text-4xl mb-3">📸</div>
-          <p className="text-gray-600 font-medium">拖拽图片到此处，或点击下方按钮</p>
-          <p className="text-sm text-gray-400 mt-1">支持拍照、相册选择、截图粘贴</p>
+          <p className="text-gray-800 font-medium">拖拽图片到此处，或点击下方按钮</p>
+          <p className="text-sm text-gray-700 mt-1">支持拍照、相册选择、截图粘贴</p>
           <div className="mt-4 flex gap-3 justify-center">
             <button
               onClick={() => fileInputRef.current?.click()}

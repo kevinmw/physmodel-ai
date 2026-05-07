@@ -283,8 +283,8 @@ export default function ExampleProblems({ onSelect }: ExampleProblemsProps) {
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border">
-      <h2 className="text-lg font-semibold mb-4">📚 示例物理模型</h2>
-      <p className="text-sm text-gray-500 mb-3">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">📚 示例物理模型</h2>
+      <p className="text-sm text-gray-800 mb-3">
         选择一个示例，快速预览动态物理模型效果
       </p>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -295,8 +295,8 @@ export default function ExampleProblems({ onSelect }: ExampleProblemsProps) {
             className="p-4 rounded-xl border border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-left transition-all"
           >
             <div className="text-2xl mb-2">{example.icon}</div>
-            <div className="font-medium text-sm">{example.title}</div>
-            <div className="text-xs text-gray-500 mt-1">{example.analysis.description}</div>
+            <div className="font-medium text-sm text-gray-900">{example.title}</div>
+            <div className="text-xs text-gray-800 mt-1">{example.analysis.description}</div>
           </button>
         ))}
       </div>

@@ -117,7 +117,7 @@ export default function AIAssistantPanel({
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-lg px-3 py-2 text-sm text-gray-400">
+            <div className="bg-gray-100 rounded-lg px-3 py-2 text-sm text-gray-800">
               AI 思考中...
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function AIAssistantPanel({
           <div className="flex gap-2">
             <button
               onClick={handleDiscard}
-              className="px-3 py-1 text-xs bg-white text-gray-600 rounded-lg border hover:bg-gray-50"
+              className="px-3 py-1 text-xs bg-white text-gray-700 rounded-lg border hover:bg-gray-50"
             >
               取消
             </button>
@@ -161,7 +161,7 @@ export default function AIAssistantPanel({
             }
           }}
           placeholder="用自然语言描述想做的修改，如'把初速度改成30'..."
-          className="flex-1 text-sm px-3 py-1.5 border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+          className="flex-1 text-sm text-gray-900 px-3 py-1.5 border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder:text-gray-800"
           disabled={loading}
         />
         <button

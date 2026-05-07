@@ -197,7 +197,7 @@ export default function DesmosViewer({
 
   if (expressions.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-8 shadow-sm border text-center text-gray-400">
+      <div className="bg-white rounded-2xl p-8 shadow-sm border text-center text-gray-800">
         请先拍照分析物理题目
       </div>
     );
@@ -207,7 +207,7 @@ export default function DesmosViewer({
     return (
       <div className="bg-white rounded-2xl p-8 shadow-sm border text-center">
         <p className="text-red-500 mb-2">Desmos 加载失败</p>
-        <p className="text-sm text-gray-400">请检查网络连接，或在 API 设置中配置 Desmos API Key</p>
+        <p className="text-sm text-gray-800">请检查网络连接，或在 API 设置中配置 Desmos API Key</p>
       </div>
     );
   }
@@ -216,15 +216,15 @@ export default function DesmosViewer({
     <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
       <div className="p-4 border-b flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Desmos 动态模型</h2>
-          <p className="text-xs text-gray-500">{physicsType || "自定义模型"}</p>
+          <h2 className="text-lg font-semibold text-gray-900">Desmos 动态模型</h2>
+          <p className="text-xs text-gray-800">{physicsType || "自定义模型"}</p>
         </div>
         <div className="flex gap-2">
           {hasForces && (
             <button
               onClick={handleToggleForces}
               className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors ${
-                showForces ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-400"
+                showForces ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-800"
               }`}
               title={showForces ? "隐藏力的矢量" : "显示力的矢量"}
             >
@@ -253,7 +253,7 @@ export default function DesmosViewer({
 
       <div ref={containerRef} className="w-full bg-gray-50 relative" style={{ minHeight: "500px" }}>
         {!loaded && (
-          <div className="text-center text-gray-400 absolute inset-0 flex items-center justify-center bg-gray-50 z-10 pointer-events-none">
+          <div className="text-center text-gray-800 absolute inset-0 flex items-center justify-center bg-gray-50 z-10 pointer-events-none">
             <div>
               <div className="animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
               <p>Loading Desmos...</p>
@@ -265,14 +265,14 @@ export default function DesmosViewer({
       {expressions.length > 0 && (
         <div className="p-4 border-t bg-gray-50">
           <details>
-            <summary className="text-sm font-medium text-gray-600 cursor-pointer">
+            <summary className="text-sm font-medium text-gray-700 cursor-pointer">
               查看 Desmos 表达式
             </summary>
             <pre className="mt-2 text-xs bg-white p-3 rounded-lg overflow-x-auto">
               {expressions.map((expr, i) => (
                 <div key={expr.id} className="py-0.5">
-                  <span className="text-gray-400">{i + 1}.</span>{" "}
-                  <span className={expr.hidden ? "text-gray-400" : ""}>{expr.latex}</span>
+                  <span className="text-gray-800">{i + 1}.</span>{" "}
+                  <span className={expr.hidden ? "text-gray-600 line-through" : "text-gray-900"}>{expr.latex}</span>
                   {expr.sliderBounds &&
                     ` [${expr.sliderBounds.min} ~ ${expr.sliderBounds.max}]`}
                   {expr.parametricDomain &&

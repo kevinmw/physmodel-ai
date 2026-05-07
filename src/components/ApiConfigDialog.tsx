@@ -57,16 +57,16 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold">⚙️ API 配置</h2>
+          <h2 className="text-lg font-semibold text-gray-900">⚙️ API 配置</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg text-gray-500"
+            className="p-1 hover:bg-gray-100 rounded-lg text-gray-700"
           >
             ✕
           </button>
         </div>
 
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-700 mb-4">
           配置视觉语言模型（VLM）和文本语言模型（LLM）的API地址和密钥。
           支持所有兼容OpenAI API格式的服务。
         </p>
@@ -76,7 +76,7 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
           <h3 className="text-sm font-semibold text-blue-600 mb-3">👁️ 视觉语言模型 (VLM)</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">API 地址</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">API 地址</label>
               <input
                 type="url"
                 value={config.vlmUrl}
@@ -86,7 +86,7 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">API 密钥</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">API 密钥</label>
               <input
                 type="password"
                 value={config.vlmKey}
@@ -96,7 +96,7 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">模型名称</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">模型名称</label>
               <input
                 type="text"
                 value={config.vlmModel}
@@ -110,10 +110,10 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
 
         {/* LLM Config */}
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-purple-600 mb-3">💬 文本语言模型 (LLM) <span className="text-xs font-normal text-gray-400">可选 - 仅用于未识别的物理类型</span></h3>
+          <h3 className="text-sm font-semibold text-purple-600 mb-3">💬 文本语言模型 (LLM) <span className="text-xs font-normal text-gray-700">可选 - 仅用于未识别的物理类型</span></h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">API 地址</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">API 地址</label>
               <input
                 type="url"
                 value={config.llmUrl}
@@ -123,7 +123,7 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">API 密钥</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">API 密钥</label>
               <input
                 type="password"
                 value={config.llmKey}
@@ -133,7 +133,7 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">模型名称</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">模型名称</label>
               <input
                 type="text"
                 value={config.llmModel}
@@ -165,9 +165,9 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
         {/* Desmos Config */}
         <div className="mb-6 mt-6 pt-6 border-t">
           <h3 className="text-sm font-semibold text-green-600 mb-3">
-            📊 Desmos API Key <span className="text-xs font-normal text-gray-400">免费 - 用于渲染动态模型</span>
+            📊 Desmos API Key <span className="text-xs font-normal text-gray-700">免费 - 用于渲染动态模型</span>
           </h3>
-          <p className="text-xs text-gray-500 mb-2">
+          <p className="text-xs text-gray-700 mb-2">
             在 <a href="https://www.desmos.com/my-api" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">desmos.com/my-api</a> 免费注册获取（选择 School/Personal Project）
           </p>
           <div>

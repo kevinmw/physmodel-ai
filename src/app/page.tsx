@@ -167,7 +167,7 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">PhysModel AI</h1>
-              <p className="text-xs text-gray-500">高中物理动态模型生成器</p>
+              <p className="text-xs text-gray-800">高中物理动态模型生成器</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -214,8 +214,8 @@ export default function Home() {
                   : "bg-white/60 border border-gray-200 hover:bg-white/80"
               }`}
             >
-              <div className="font-semibold text-sm">{tab.label}</div>
-              <div className="text-xs text-gray-500">{tab.desc}</div>
+              <div className="font-semibold text-sm text-gray-900">{tab.label}</div>
+              <div className="text-xs text-gray-800">{tab.desc}</div>
             </button>
           ))}
         </div>
@@ -233,8 +233,8 @@ export default function Home() {
             {loading && (
               <div className="bg-white rounded-2xl p-8 shadow-sm border text-center">
                 <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600 font-medium">AI 正在分析物理题目...</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-gray-800 font-medium">AI 正在分析物理题目...</p>
+                <p className="text-sm text-gray-700 mt-1">
                   识别文字 → 理解物理场景 → 生成模型数据
                 </p>
               </div>
@@ -273,7 +273,7 @@ export default function Home() {
         {history.length > 0 && (
           <div className="mt-8">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold">历史记录 ({history.length})</h3>
+              <h3 className="text-lg font-semibold text-gray-900">历史记录 ({history.length})</h3>
               <button
                 onClick={() => {
                   setHistory([]);
@@ -297,8 +297,8 @@ export default function Home() {
                     }}
                     className="w-full text-left pr-6"
                   >
-                    <div className="font-medium text-sm">{item.analysis.description || item.analysis.physicsType}</div>
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="font-medium text-sm text-gray-900">{item.analysis.description || item.analysis.physicsType}</div>
+                    <div className="text-xs text-gray-700 mt-1">
                       {new Date(item.timestamp).toLocaleString()}
                     </div>
                     {item.analysis.concepts.length > 0 && (
@@ -315,7 +315,7 @@ export default function Home() {
                         e.stopPropagation();
                         setEditingItem(item);
                       }}
-                      className="w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-opacity text-sm"
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-gray-700 hover:text-blue-500 hover:bg-blue-50 transition-opacity text-sm"
                       title="编辑"
                     >
                       ✎
@@ -329,7 +329,7 @@ export default function Home() {
                           return updated;
                         });
                       }}
-                      className="w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 transition-opacity text-sm"
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-gray-700 hover:text-red-500 hover:bg-red-50 transition-opacity text-sm"
                       title="删除"
                     >
                       ×

@@ -89,16 +89,16 @@ export default function EditPanel({
         <div className="flex items-center gap-3">
           <button
             onClick={onCancel}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm"
+            className="flex items-center gap-1 text-gray-700 hover:text-gray-900 text-sm"
           >
             ← 返回
           </button>
           <div className="h-4 w-px bg-gray-200" />
           <div>
-            <h2 className="text-sm font-semibold">
+            <h2 className="text-sm font-semibold text-gray-900">
               编辑: {analysis.description || analysis.physicsType}
             </h2>
-            <div className="flex gap-2 text-xs text-gray-400">
+            <div className="flex gap-2 text-xs text-gray-800">
               <span>{exprCount} 个表达式</span>
               {sliderCount > 0 && <span>{sliderCount} 个滑块</span>}
               {hiddenCount > 0 && <span>{hiddenCount} 个隐藏</span>}
@@ -125,7 +125,7 @@ export default function EditPanel({
                     e.stopPropagation();
                     handleSave("overwrite");
                   }}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-t-lg"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-t-lg"
                 >
                   覆盖原记录
                 </button>
@@ -134,7 +134,7 @@ export default function EditPanel({
                     e.stopPropagation();
                     handleSave("new");
                   }}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-b-lg border-t"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 rounded-b-lg border-t"
                 >
                   另存为新记录
                 </button>

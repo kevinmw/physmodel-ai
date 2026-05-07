@@ -67,7 +67,7 @@ export default function ExpressionEditor({
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b bg-gray-50 shrink-0">
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-gray-800">
           表达式 ({expressions.length})
         </span>
         <div className="flex gap-1">
@@ -97,7 +97,7 @@ export default function ExpressionEditor({
           >
             <div className="flex items-start gap-2 px-3 py-2">
               {/* Number badge */}
-              <span className="shrink-0 w-6 h-6 flex items-center justify-center bg-gray-200 text-gray-600 text-xs rounded-full mt-0.5">
+              <span className="shrink-0 w-6 h-6 flex items-center justify-center bg-gray-200 text-gray-700 text-xs rounded-full mt-0.5 font-medium">
                 {i + 1}
               </span>
 
@@ -107,7 +107,7 @@ export default function ExpressionEditor({
                 <textarea
                   value={expr.latex}
                   onChange={(e) => updateExpr(expr.id, { latex: e.target.value })}
-                  className="w-full text-sm font-mono bg-transparent border border-transparent focus:border-blue-300 rounded px-2 py-1 resize-none focus:outline-none"
+                  className="w-full text-sm font-mono text-gray-900 bg-transparent border border-transparent focus:border-blue-300 rounded px-2 py-1 resize-none focus:outline-none placeholder:text-gray-800"
                   rows={Math.max(1, expr.latex.split("\n").length)}
                   placeholder="输入 LaTeX 公式..."
                 />
@@ -115,12 +115,12 @@ export default function ExpressionEditor({
                 {/* Quick toggles */}
                 <div className="flex gap-2 mt-1">
                   {expr.sliderBounds && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-800 font-medium">
                       滑块 [{expr.sliderBounds.min}~{expr.sliderBounds.max}]
                     </span>
                   )}
                   {expr.parametricDomain && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-800 font-medium">
                       参数 t∈[{expr.parametricDomain.min},{expr.parametricDomain.max}]
                     </span>
                   )}
@@ -140,7 +140,7 @@ export default function ExpressionEditor({
                   }
                   className={`w-6 h-6 flex items-center justify-center rounded text-xs transition-colors ${
                     expr.hidden
-                      ? "bg-gray-100 text-gray-400"
+                      ? "bg-gray-100 text-gray-800"
                       : "bg-green-100 text-green-700"
                   }`}
                   title={expr.hidden ? "显示" : "隐藏"}
@@ -156,7 +156,7 @@ export default function ExpressionEditor({
                   className={`w-6 h-6 flex items-center justify-center rounded text-xs transition-colors ${
                     expandedId === expr.id
                       ? "bg-blue-100 text-blue-700"
-                      : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                      : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                   }`}
                   title="高级设置"
                 >
@@ -165,7 +165,7 @@ export default function ExpressionEditor({
                 <button
                   onClick={() => moveExpr(i, -1)}
                   disabled={i === 0}
-                  className="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-400 hover:bg-gray-100 disabled:opacity-30"
+                  className="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-800 hover:bg-gray-100 disabled:opacity-30"
                   title="上移"
                 >
                   ↑
@@ -173,14 +173,14 @@ export default function ExpressionEditor({
                 <button
                   onClick={() => moveExpr(i, 1)}
                   disabled={i === expressions.length - 1}
-                  className="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-400 hover:bg-gray-100 disabled:opacity-30"
+                  className="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-800 hover:bg-gray-100 disabled:opacity-30"
                   title="下移"
                 >
                   ↓
                 </button>
                 <button
                   onClick={() => deleteExpr(expr.id)}
-                  className="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-400 hover:bg-red-100 hover:text-red-500"
+                  className="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-800 hover:bg-red-100 hover:text-red-500"
                   title="删除"
                 >
                   ×
@@ -194,7 +194,7 @@ export default function ExpressionEditor({
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {/* Color */}
                   <div>
-                    <label className="block text-gray-500 mb-1">颜色</label>
+                    <label className="block text-gray-700 mb-1">颜色</label>
                     <div className="flex gap-1">
                       {["#2d70b3", "#c74440", "#388c51", "#6042a6", "#fa7e19", "#000000"].map(
                         (c) => (
@@ -217,7 +217,7 @@ export default function ExpressionEditor({
                   {expr.sliderBounds && (
                     <>
                       <div>
-                        <label className="block text-gray-500 mb-1">最小值</label>
+                        <label className="block text-gray-700 mb-1">最小值</label>
                         <input
                           type="number"
                           value={expr.sliderBounds.min}
@@ -229,11 +229,11 @@ export default function ExpressionEditor({
                               },
                             })
                           }
-                          className="w-full px-2 py-1 border rounded text-sm"
+                          className="w-full px-2 py-1 border rounded text-sm text-gray-900"
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-500 mb-1">最大值</label>
+                        <label className="block text-gray-700 mb-1">最大值</label>
                         <input
                           type="number"
                           value={expr.sliderBounds.max}
@@ -245,11 +245,11 @@ export default function ExpressionEditor({
                               },
                             })
                           }
-                          className="w-full px-2 py-1 border rounded text-sm"
+                          className="w-full px-2 py-1 border rounded text-sm text-gray-900"
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-500 mb-1">步长</label>
+                        <label className="block text-gray-700 mb-1">步长</label>
                         <input
                           type="number"
                           value={expr.sliderBounds.step}
@@ -261,7 +261,7 @@ export default function ExpressionEditor({
                               },
                             })
                           }
-                          className="w-full px-2 py-1 border rounded text-sm"
+                          className="w-full px-2 py-1 border rounded text-sm text-gray-900"
                         />
                       </div>
                     </>
@@ -271,7 +271,7 @@ export default function ExpressionEditor({
                   {expr.parametricDomain && (
                     <>
                       <div>
-                        <label className="block text-gray-500 mb-1">
+                        <label className="block text-gray-700 mb-1">
                           t 最小值
                         </label>
                         <input
@@ -285,11 +285,11 @@ export default function ExpressionEditor({
                               },
                             })
                           }
-                          className="w-full px-2 py-1 border rounded text-sm font-mono"
+                          className="w-full px-2 py-1 border rounded text-sm font-mono text-gray-900"
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-500 mb-1">
+                        <label className="block text-gray-700 mb-1">
                           t 最大值
                         </label>
                         <input
@@ -303,7 +303,7 @@ export default function ExpressionEditor({
                               },
                             })
                           }
-                          className="w-full px-2 py-1 border rounded text-sm font-mono"
+                          className="w-full px-2 py-1 border rounded text-sm font-mono text-gray-900"
                         />
                       </div>
                     </>
@@ -320,7 +320,7 @@ export default function ExpressionEditor({
                         }
                         className="rounded"
                       />
-                      <span className="text-gray-600">动画播放</span>
+                      <span className="text-gray-800">动画播放</span>
                     </label>
                   </div>
 
@@ -335,7 +335,7 @@ export default function ExpressionEditor({
                         }
                         className="rounded"
                       />
-                      <span className="text-gray-600">隐藏</span>
+                      <span className="text-gray-800">隐藏</span>
                     </label>
                   </div>
                 </div>
@@ -345,7 +345,7 @@ export default function ExpressionEditor({
         ))}
 
         {expressions.length === 0 && (
-          <div className="p-8 text-center text-gray-400 text-sm">
+          <div className="p-8 text-center text-gray-800 text-sm">
             暂无表达式，点击上方按钮添加
           </div>
         )}
