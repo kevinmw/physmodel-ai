@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import ExpressionEditor from "./ExpressionEditor";
 import AIAssistantPanel from "./AIAssistantPanel";
 import DesmosViewer from "./DesmosViewer";
+import { getDesmosExpressions } from "@/lib/desmosTemplates";
 import type { DesmosExpr, Viewport3D } from "@/lib/desmosTemplates";
 
 interface HistoryItem {
@@ -37,12 +38,20 @@ export default function EditPanel({
 }: EditPanelProps) {
   const analysis = historyItem.analysis;
 
+  // Regenerate expressions from current simplified templates to avoid
+  // "too many variables" errors from old history data
+  const freshResult = useMemo(() => {
+    return getDesmosExpressions(analysis.physicsType, analysis.knownValues || {});
+  }, [analysis.physicsType, analysis.knownValues]);
+
   const [editExprs, setEditExprs] = useState<DesmosExpr[]>(
-    analysis.desmosExprs || []
+    freshResult?.expressions || analysis.desmosExprs || []
   );
   const [previewExprs, setPreviewExprs] = useState<DesmosExpr[]>(
-    analysis.desmosExprs || []
+    freshResult?.expressions || analysis.desmosExprs || []
   );
+  // Track whether we should use fresh template data for viewport/dimension
+  const [useFresh, setUseFresh] = useState(true);
   const [showSaveMenu, setShowSaveMenu] = useState(false);
 
   // Throttle preview updates to avoid Desmos calculator thrashing
@@ -167,9 +176,9 @@ export default function EditPanel({
           <DesmosViewer
             expressions={previewExprs}
             physicsType={analysis.physicsType}
-            viewport={analysis.viewport}
-            viewport3d={analysis.viewport3d}
-            dimension={analysis.dimension || '2d'}
+            viewport={useFresh ? freshResult?.viewport : analysis.viewport}
+            viewport3d={useFresh ? freshResult?.viewport3d : analysis.viewport3d}
+            dimension={useFresh ? freshResult?.dimension : analysis.dimension || '2d'}
             editable
           />
         </div>

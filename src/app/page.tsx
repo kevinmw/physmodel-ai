@@ -7,6 +7,7 @@ import DesmosViewer from "@/components/DesmosViewer";
 import ExampleProblems from "@/components/ExampleProblems";
 import ApiConfigDialog from "@/components/ApiConfigDialog";
 import EditPanel from "@/components/EditPanel";
+import { getDesmosExpressions } from "@/lib/desmosTemplates";
 import type { DesmosExpr, Viewport3D } from "@/lib/desmosTemplates";
 
 interface PhysicsAnalysis {
@@ -296,7 +297,19 @@ export default function Home() {
                 >
                   <button
                     onClick={() => {
-                      setAnalysis(item.analysis);
+                      // Regenerate expressions from current simplified templates
+                      // to avoid "too many variables" errors from old history data
+                      const result = getDesmosExpressions(
+                        item.analysis.physicsType,
+                        item.analysis.knownValues || {}
+                      );
+                      setAnalysis({
+                        ...item.analysis,
+                        desmosExprs: result?.expressions || item.analysis.desmosExprs || [],
+                        viewport: result?.viewport || item.analysis.viewport,
+                        viewport3d: result?.viewport3d || item.analysis.viewport3d,
+                        dimension: result?.dimension || item.analysis.dimension || '2d',
+                      });
                       setActiveTab("model");
                     }}
                     className="w-full text-left pr-6"

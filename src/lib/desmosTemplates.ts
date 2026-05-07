@@ -575,44 +575,33 @@ const TEMPLATES: Record<string, TemplateFn> = {
     const omega = Math.sqrt(g / h);
     const tMax = Math.ceil(2 * Math.PI / omega * 2 * 10) / 10;
     const maxR = 5 * tanTheta;
+    const gStr = String(g.toFixed(2));
+    const rStr = String(r.toFixed(3));
+    const wStr = String(omega.toFixed(3));
+    const hStr = String(h.toFixed(2));
+    const thStr = String(theta.toFixed(1));
+    const sinTh = Math.sin(rad).toFixed(4);
+    const cosTh = Math.cos(rad).toFixed(4);
 
     return {
       expressions: [
-        makeSlider("h", "h", h, { min: 0.5, max: 5, step: 0.5 }),
-        makeSlider("theta", "\\theta", theta, { min: 20, max: 70, step: 5 }),
+        // Only one slider: animated time. All constants baked into LaTeX strings.
         { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
 
-        // Hidden relationships
-        { id: "r_def", latex: "r=h\\tan(\\theta)", hidden: true },
-        { id: "omega_def", latex: "\\omega=\\sqrt{\\frac{g}{h}}", hidden: true },
-        { id: "g_def", latex: `g=${g}`, hidden: true },
+        // Ball orbiting at height h (all numeric values baked in)
+        { id: "ball", latex: `(${rStr}\\cos(${wStr}t),\\ ${hStr},\\ ${rStr}\\sin(${wStr}t))`, color: C.RED },
 
-        // Cone surface (implicit): z^2 = tan^2(theta) * (x^2 + y^2)
-        { id: "cone_surface", latex: "z^{2}=\\tan^{2}(\\theta)(x^{2}+y^{2})", color: C.BLUE, hidden: true },
-
-        // Orbit circle at height h: x^2 + z^2 = r^2
-        { id: "orbit_circle", latex: `x^{2}+z^{2}=(${r})^{2}`, color: C.BLUE, lineStyle: "DASHED" },
-
-        // Ball orbiting: parametric 3D curve (x, y, z) = (r*cos(omega*t), h, r*sin(omega*t))
-        { id: "ball", latex: `(r\\cos(\\omega t),\\ h,\\ r\\sin(\\omega t))`, color: C.RED },
-
-        // Full orbit path
+        // Full orbit path (parametric circle at height h)
         {
           id: "orbit_path",
-          latex: `(r\\cos(s),\\ h,\\ r\\sin(s))`,
+          latex: `(${rStr}\\cos(s),\\ ${hStr},\\ ${rStr}\\sin(s))`,
           parametricDomain: { min: "0", max: String(2 * Math.PI) },
           color: C.BLUE,
           lineStyle: "DASHED",
         },
 
-        // Force vectors at ball position
-        buildForceVector3D("force_g", "r\\cos(\\omega t)", "h", "r\\sin(\\omega t)", "0", "-2", "0", C.PURPLE, "mg"),
-        buildForceVector3D("force_n", "r\\cos(\\omega t)", "h", "r\\sin(\\omega t)", "-1.2\\sin(\\theta)\\cos(\\omega t)", "1.2\\cos(\\theta)", "-1.2\\sin(\\theta)\\sin(\\omega t)", C.ORANGE, "N"),
-        buildForceVector3D("force_fc", "r\\cos(\\omega t)", "h", "r\\sin(\\omega t)", "-1.2\\cos(\\omega t)", "0", "-1.2\\sin(\\omega t)", C.RED, "F_{c}"),
-
-        // Height indicator
-        { id: "height_line", latex: `(0,\\ s,\\ 0)`, parametricDomain: { min: "0", max: "h" }, color: C.GREEN, lineStyle: "DASHED" },
-        { id: "h_label", latex: `(0.3,\\ h,\\ 0)`, color: C.GREEN, label: "h", showLabel: true, pointStyle: "NONE" },
+        // Single gravity vector
+        buildForceVector3D("force_g", `${rStr}\\cos(${wStr}t)`, hStr, `${rStr}\\sin(${wStr}t)`, "0", "-2", "0", C.PURPLE, "mg"),
       ],
       viewport3d: {
         xMin: -maxR - 1,

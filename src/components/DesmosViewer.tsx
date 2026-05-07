@@ -29,6 +29,7 @@ export default function DesmosViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const calcEltRef = useRef<HTMLDivElement | null>(null);
   const calculatorRef = useRef<any>(null);
+  const mountedRef = useRef(false);
   const [loaded, setLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -37,6 +38,7 @@ export default function DesmosViewer({
   const loadedExprsId = useRef<string | null>(null);
 
   const destroyCalc = useCallback(() => {
+    mountedRef.current = false;
     if (calculatorRef.current) {
       try {
         calculatorRef.current.destroy();
@@ -59,6 +61,7 @@ export default function DesmosViewer({
     loadedExprsId.current = exprsId;
 
     destroyCalc();
+    mountedRef.current = true;
 
     const elt = document.createElement("div");
     elt.style.width = "100%";
@@ -80,26 +83,51 @@ export default function DesmosViewer({
     });
     calculatorRef.current = calculator;
 
+    // Normalize expressions: strip invalid pointStyle values
+    const normalizeExpr = (expr: DesmosExpr) => {
+      const normalized = { ...expr };
+      if ((normalized as any).pointStyle === "NONE") {
+        delete (normalized as any).pointStyle;
+      }
+      return normalized;
+    };
+
     expressions.forEach((expr) => {
       try {
-        calculator.setExpression(expr);
+        calculator.setExpression(normalizeExpr(expr));
       } catch (e) {
         console.warn("Desmos setExpression error:", e, expr);
       }
     });
 
+    // Apply viewport with safety guard: skip if calculator was destroyed
     if (is3D && viewport3d) {
-      setTimeout(() => {
-        try {
-          calculator.setMathBounds(viewport3d);
-        } catch {}
-      }, 200);
+      const isValid = viewport3d.xMin < viewport3d.xMax && viewport3d.yMin < viewport3d.yMax && viewport3d.zMin < viewport3d.zMax;
+      if (isValid) {
+        setTimeout(() => {
+          if (!mountedRef.current || !calculatorRef.current) return;
+          try {
+            calculator.setMathBounds({
+              xMin: viewport3d.xMin,
+              xMax: viewport3d.xMax,
+              yMin: viewport3d.yMin,
+              yMax: viewport3d.yMax,
+              zMin: viewport3d.zMin,
+              zMax: viewport3d.zMax,
+            });
+          } catch {}
+        }, 200);
+      }
     } else if (viewport) {
-      setTimeout(() => {
-        try {
-          calculator.setMathBounds(viewport);
-        } catch {}
-      }, 200);
+      const isValid = viewport.left < viewport.right && viewport.bottom < viewport.top;
+      if (isValid) {
+        setTimeout(() => {
+          if (!mountedRef.current || !calculatorRef.current) return;
+          try {
+            calculator.setMathBounds(viewport);
+          } catch {}
+        }, 200);
+      }
     }
 
     setLoaded(true);
@@ -125,7 +153,7 @@ export default function DesmosViewer({
         if (saved) apiKey = JSON.parse(saved).desmosKey || "";
       } catch {}
 
-      const apiVersion = dimension === '3d' ? 'v1.13/3d' : 'v1.12';
+      const apiVersion = dimension === '3d' ? 'v1.13' : 'v1.12';
       const script = document.createElement("script");
       script.src = `https://www.desmos.com/api/${apiVersion}/calculator.js${apiKey ? "?apiKey=" + apiKey : ""}`;
       script.async = true;
@@ -154,7 +182,11 @@ export default function DesmosViewer({
     if (!editable || !calculatorRef.current || !loaded) return;
     expressions.forEach((expr) => {
       try {
-        calculatorRef.current.setExpression(expr);
+        const normalized = { ...expr };
+        if ((normalized as any).pointStyle === "NONE") {
+          delete (normalized as any).pointStyle;
+        }
+        calculatorRef.current.setExpression(normalized);
       } catch (e) {
         console.warn("Desmos setExpression error:", e, expr);
       }
