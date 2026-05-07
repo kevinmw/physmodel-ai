@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTemplateCommands, isSupportedType } from "@/lib/physicsTemplates";
+import { getDesmosExpressions, isSupportedType } from "@/lib/desmosTemplates";
 
 interface ApiConfig {
   vlmUrl: string;
@@ -246,11 +246,11 @@ export async function POST(request: NextRequest) {
     const knownValues = analysisResult.knownValues || {};
 
     if (physicsType !== "other" && isSupportedType(physicsType)) {
-      const commands = getTemplateCommands(physicsType, knownValues);
+      const desmosExprs = getDesmosExpressions(physicsType, knownValues);
       return NextResponse.json({
         analysis: {
           ...analysisResult,
-          ggbCommands: commands || [],
+          desmosExprs: desmosExprs || [],
           description: analysisResult.description || "",
         },
       });
@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         analysis: {
           ...analysisResult,
-          ggbCommands: [],
+          desmosExprs: [],
           description: analysisResult.description || "该类型暂不支持自动建模，请尝试示例中的物理模型",
         },
       });
@@ -341,6 +341,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       analysis: {
         ...analysisResult,
+        desmosExprs: [],
         ggbCommands: commands,
         description: ggbResult.description || analysisResult.description || "",
       },

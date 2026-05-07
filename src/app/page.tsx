@@ -3,9 +3,10 @@
 import { useState, useCallback, useEffect } from "react";
 import PhotoCapture from "@/components/PhotoCapture";
 import AnalysisPanel from "@/components/AnalysisPanel";
-import GeoGebraViewer from "@/components/GeoGebraViewer";
+import DesmosViewer from "@/components/DesmosViewer";
 import ExampleProblems from "@/components/ExampleProblems";
 import ApiConfigDialog from "@/components/ApiConfigDialog";
+import type { DesmosExpr } from "@/lib/desmosTemplates";
 
 interface PhysicsAnalysis {
   ocrText: string;
@@ -13,7 +14,7 @@ interface PhysicsAnalysis {
   knownValues: Record<string, number>;
   forces: string[];
   physicsType: string;
-  ggbCommands: string[];
+  desmosExprs: DesmosExpr[];
   description: string;
 }
 
@@ -223,8 +224,8 @@ export default function Home() {
                 </button>
               </div>
             )}
-            <GeoGebraViewer
-              ggbCommands={analysis?.ggbCommands || []}
+            <DesmosViewer
+              expressions={analysis?.desmosExprs || []}
               physicsType={analysis?.physicsType || ""}
             />
           </div>
@@ -249,14 +250,14 @@ export default function Home() {
               {history.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white rounded-xl p-3 shadow-sm border hover:shadow-md transition-shadow group"
+                  className="bg-white rounded-xl p-3 shadow-sm border hover:shadow-md transition-shadow group relative"
                 >
                   <button
                     onClick={() => {
                       setAnalysis(item.analysis);
                       setActiveTab("model");
                     }}
-                    className="w-full text-left"
+                    className="w-full text-left pr-6"
                   >
                     <div className="font-medium text-sm">{item.analysis.description || item.analysis.physicsType}</div>
                     <div className="text-xs text-gray-400 mt-1">
@@ -271,17 +272,17 @@ export default function Home() {
                     )}
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setHistory((prev) => {
                         const updated = prev.filter((h) => h.id !== item.id);
                         localStorage.setItem("physmodel_history", JSON.stringify(updated));
                         return updated;
                       });
                     }}
-                    className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                    style={{ position: "relative", float: "right", marginTop: "-40px" }}
+                    className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity text-sm"
                   >
-                    &times;
+                    ×
                   </button>
                 </div>
               ))}

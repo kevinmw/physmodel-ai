@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
+import { getDesmosExpressions } from "@/lib/desmosTemplates";
+import type { DesmosExpr } from "@/lib/desmosTemplates";
 
 interface PhysicsAnalysis {
   ocrText: string;
@@ -8,7 +10,7 @@ interface PhysicsAnalysis {
   knownValues: Record<string, number>;
   forces: string[];
   physicsType: string;
-  ggbCommands: string[];
+  desmosExprs: DesmosExpr[];
   description: string;
 }
 
@@ -16,7 +18,7 @@ interface ExampleProblem {
   title: string;
   icon: string;
   physicsType: string;
-  analysis: PhysicsAnalysis;
+  analysis: Omit<PhysicsAnalysis, "desmosExprs"> & { knownValues: Record<string, number> };
 }
 
 const EXAMPLE_PROBLEMS: ExampleProblem[] = [
@@ -30,14 +32,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { v0: 20, theta: 45, g: 9.8 },
       forces: ["重力"],
       physicsType: "projectile_motion",
-      ggbCommands: [
-        "v0 = Slider(1, 50, 1)",
-        "theta = Slider(5, 85, 5)",
-        "t = Slider(0, 10, 0.1)",
-        "O = (0, 0)",
-        "P = (v0*cos(theta)*t, v0*sin(theta)*t - 0.5*9.8*t^2)",
-        "Curve(v0*cos(theta)*t, v0*sin(theta)*t - 0.5*9.8*t^2, t, 0, 10)",
-      ],
       description: "物体以初速度v0斜抛，分解为水平和竖直方向的运动",
     },
   },
@@ -51,14 +45,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { L: 2, alpha0: 30, g: 9.8 },
       forces: ["重力", "绳的拉力"],
       physicsType: "pendulum",
-      ggbCommands: [
-        "L = Slider(1, 5, 0.1)",
-        "alpha0 = Slider(10, 60, 5)",
-        "t = Slider(0, 10, 0.1)",
-        "O = (0, 0)",
-        "P = (L*sin(alpha0*cos(1.5*t)), -L*cos(alpha0*cos(1.5*t)))",
-        "Curve(L*sin(alpha0*cos(1.5*t)), -L*cos(alpha0*cos(1.5*t)), t, 0, 10)",
-      ],
       description: "单摆在重力作用下做简谐运动",
     },
   },
@@ -72,13 +58,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { h: 45, g: 9.8 },
       forces: ["重力"],
       physicsType: "free_fall",
-      ggbCommands: [
-        "h = Slider(10, 100, 5)",
-        "t = Slider(0, 5, 0.1)",
-        "A = (0, h)",
-        "P = (0, h - 0.5*9.8*t^2)",
-        "Curve(t, h - 0.5*9.8*t^2, t, 0, sqrt(2*h/9.8))",
-      ],
       description: "物体仅在重力作用下从静止开始自由下落",
     },
   },
@@ -92,14 +71,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { angle: 30, mu: 0.2, g: 9.8 },
       forces: ["重力", "支持力", "摩擦力"],
       physicsType: "inclined_plane",
-      ggbCommands: [
-        "angle = Slider(10, 60, 5)",
-        "mu = Slider(0, 1, 0.05)",
-        "t = Slider(0, 10, 0.1)",
-        "S = (0, 5)",
-        "P = (0.5*9.8*(sin(angle)-mu*cos(angle))*t^2*cos(angle), 5 - 0.5*9.8*(sin(angle)-mu*cos(angle))*t^2*sin(angle))",
-        "Curve(0.5*9.8*(sin(angle)-mu*cos(angle))*t^2*cos(angle), 5 - 0.5*9.8*(sin(angle)-mu*cos(angle))*t^2*sin(angle), t, 0, 10)",
-      ],
       description: "滑块在斜面上受重力、支持力和摩擦力作用下滑",
     },
   },
@@ -113,14 +84,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { r: 3, omega: 2 },
       forces: ["向心力"],
       physicsType: "circular_motion",
-      ggbCommands: [
-        "r = Slider(1, 5, 0.1)",
-        "omega = Slider(0.5, 5, 0.5)",
-        "t = Slider(0, 10, 0.1)",
-        "O = (0, 0)",
-        "P = (r*cos(omega*t), r*sin(omega*t))",
-        "C = Circle((0,0), r)",
-      ],
       description: "物体在向心力作用下做匀速圆周运动",
     },
   },
@@ -134,14 +97,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { k: 50, m: 2, A: 0.1 },
       forces: ["弹力", "重力"],
       physicsType: "spring",
-      ggbCommands: [
-        "amp = Slider(0.5, 3, 0.1)",
-        "omega = Slider(0.5, 5, 0.5)",
-        "t = Slider(0, 10, 0.1)",
-        "O = (0, 0)",
-        "P = (0, amp*sin(omega*t))",
-        "Curve(t, amp*sin(omega*t), t, 0, 10)",
-      ],
       description: "弹簧振子在弹力作用下做简谐运动",
     },
   },
@@ -155,13 +110,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { v0: 20, g: 9.8 },
       forces: ["重力"],
       physicsType: "vertical_throw",
-      ggbCommands: [
-        "v0 = Slider(5, 40, 1)",
-        "t = Slider(0, 10, 0.1)",
-        "O = (0, 0)",
-        "P = (0, v0*t - 0.5*9.8*t^2)",
-        "Curve(t, v0*t - 0.5*9.8*t^2, t, 0, 2*v0/9.8)",
-      ],
       description: "物体以初速度v0竖直上抛，先减速上升再加速下落",
     },
   },
@@ -175,14 +123,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { v0: 10, h: 20, g: 9.8 },
       forces: ["重力"],
       physicsType: "horizontal_throw",
-      ggbCommands: [
-        "v0 = Slider(1, 30, 1)",
-        "h = Slider(5, 50, 5)",
-        "t = Slider(0, 5, 0.1)",
-        "A = (0, h)",
-        "P = (v0*t, h - 0.5*9.8*t^2)",
-        "Curve(v0*t, h - 0.5*9.8*t^2, t, 0, sqrt(2*h/9.8))",
-      ],
       description: "物体从高处水平抛出，水平匀速+竖直自由落体的合运动",
     },
   },
@@ -196,14 +136,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { m1: 2, m2: 3, v1: 5, v2: 0 },
       forces: ["碰撞力"],
       physicsType: "elastic_collision",
-      ggbCommands: [
-        "m1 = Slider(1, 10, 0.5)",
-        "m2 = Slider(1, 10, 0.5)",
-        "v1 = Slider(1, 10, 0.5)",
-        "t = Slider(0, 10, 0.1)",
-        "P = (If(t<4, -5+v1*t, -5+v1*4+(m1-m2)/(m1+m2)*v1*(t-4)), 0)",
-        "Q = (If(t<4, 5, 5+2*m1/(m1+m2)*v1*(t-4)), 0)",
-      ],
       description: "两球弹性碰撞，动量和动能均守恒",
     },
   },
@@ -217,14 +149,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { m: 1, q: 1, v: 5, B: 2 },
       forces: ["洛伦兹力"],
       physicsType: "magnetic_field",
-      ggbCommands: [
-        "v0 = Slider(1, 10, 0.5)",
-        "B = Slider(0.5, 5, 0.5)",
-        "t = Slider(0, 10, 0.1)",
-        "O = (0, 0)",
-        "P = (v0/B*sin(B*t), v0/B-v0/B*cos(B*t))",
-        "C = Circle((0, v0/B), v0/B)",
-      ],
       description: "带电粒子在匀强磁场中受洛伦兹力做匀速圆周运动",
     },
   },
@@ -238,16 +162,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { A1: 2, A2: 2, k1: 2, k2: 3 },
       forces: [],
       physicsType: "wave_superposition",
-      ggbCommands: [
-        "A1 = Slider(0.5, 5, 0.5)",
-        "A2 = Slider(0.5, 5, 0.5)",
-        "t = Slider(0, 10, 0.1)",
-        "f1 = Slider(0.5, 5, 0.5)",
-        "f2 = Slider(0.5, 5, 0.5)",
-        "Curve(x, A1*sin(f1*x - t) + A2*sin(f2*x - t), x, -10, 10)",
-        "Curve(x, A1*sin(f1*x - t), x, -10, 10)",
-        "Curve(x, A2*sin(f2*x - t), x, -10, 10)",
-      ],
       description: "两列波的叠加，红线为合成波，展示干涉现象",
     },
   },
@@ -261,13 +175,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { h: 10, g: 9.8, m: 1 },
       forces: ["重力", "支持力"],
       physicsType: "energy_conservation",
-      ggbCommands: [
-        "h = Slider(2, 15, 1)",
-        "t = Slider(0, 5, 0.1)",
-        "G = (0, 0)",
-        "P = (0, If(h - 0.5*9.8*t^2>0, h - 0.5*9.8*t^2, 0))",
-        "Curve(t, If(h - 0.5*9.8*t^2>0, h - 0.5*9.8*t^2, 0), t, 0, 5)",
-      ],
       description: "物体沿光滑曲面下滑，动能和势能相互转化，总机械能守恒",
     },
   },
@@ -281,16 +188,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { A: 3, b: 0.3, omega: 3 },
       forces: ["弹力", "阻力"],
       physicsType: "damped_oscillation",
-      ggbCommands: [
-        "A = Slider(1, 5, 0.1)",
-        "b = Slider(0.1, 2, 0.1)",
-        "omega = Slider(0.5, 5, 0.5)",
-        "t = Slider(0, 10, 0.1)",
-        "P = (t, A*exp(-b*t)*sin(omega*t))",
-        "Curve(t, A*exp(-b*t)*sin(omega*t), t, 0, 10)",
-        "Curve(t, A*exp(-b*t), t, 0, 10)",
-        "Curve(t, -A*exp(-b*t), t, 0, 10)",
-      ],
       description: "阻尼振动：振幅随时间指数衰减，包络线为e^(-bt)",
     },
   },
@@ -304,13 +201,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { v0: 5, a: 2 },
       forces: ["恒力"],
       physicsType: "uniform_acceleration",
-      ggbCommands: [
-        "v0 = Slider(0, 20, 1)",
-        "a = Slider(-5, 5, 0.5)",
-        "t = Slider(0, 10, 0.1)",
-        "P = (t, v0 + a*t)",
-        "Curve(t, v0 + a*t, t, 0, 10)",
-      ],
       description: "匀变速直线运动的v-t图像（直线）和s-t图像（抛物线）",
     },
   },
@@ -324,17 +214,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { m1: 3, m2: 5, d: 6 },
       forces: ["万有引力"],
       physicsType: "binary_star",
-      ggbCommands: [
-        "m1 = Slider(1, 10, 0.5)",
-        "m2 = Slider(1, 10, 0.5)",
-        "d = Slider(2, 10, 0.5)",
-        "t = Slider(0, 10, 0.1)",
-        "O = (0, 0)",
-        "P = (m2/(m1+m2)*d*cos(t), m2/(m1+m2)*d*sin(t))",
-        "Q = (-m1/(m1+m2)*d*cos(t), -m1/(m1+m2)*d*sin(t))",
-        "C1 = Circle((0,0), m2/(m1+m2)*d)",
-        "C2 = Circle((0,0), m1/(m1+m2)*d)",
-      ],
       description: "双星绕公共质心做圆周运动，质量越大离质心越近",
     },
   },
@@ -348,16 +227,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { v0: 5, E: 3, q: 1, m: 1 },
       forces: ["电场力"],
       physicsType: "electric_deflection",
-      ggbCommands: [
-        "v0 = Slider(1, 10, 0.5)",
-        "E = Slider(1, 10, 0.5)",
-        "q = Slider(0.5, 5, 0.5)",
-        "m = Slider(0.5, 5, 0.5)",
-        "t = Slider(0, 10, 0.1)",
-        "a = q*E/m",
-        "P = (v0*t, 0.5*a*t^2)",
-        "Curve(v0*t, 0.5*a*t^2, t, 0, 10)",
-      ],
       description: "带电粒子在匀强电场中偏转，轨迹为抛物线",
     },
   },
@@ -371,15 +240,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { f0: 2, f: 2, A0: 2, gamma: 0.5 },
       forces: ["驱动力", "回复力", "阻力"],
       physicsType: "forced_oscillation",
-      ggbCommands: [
-        "f0 = Slider(0.5, 5, 0.5)",
-        "f = Slider(0.5, 5, 0.5)",
-        "A0 = Slider(0.5, 3, 0.5)",
-        "gamma = Slider(0.1, 2, 0.1)",
-        "t = Slider(0, 10, 0.1)",
-        "P = (t, A0/sqrt((f0^2-f^2)^2 + (gamma*f)^2)*sin(f*t))",
-        "Curve(t, A0/sqrt((f0^2-f^2)^2 + (gamma*f)^2)*sin(f*t), t, 0, 10)",
-      ],
       description: "驱动力频率接近固有频率时振幅急剧增大，产生共振",
     },
   },
@@ -393,15 +253,6 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       knownValues: { Ax: 3, Ay: 3, fx: 2, fy: 3 },
       forces: [],
       physicsType: "lissajous",
-      ggbCommands: [
-        "Ax = Slider(1, 5, 0.5)",
-        "Ay = Slider(1, 5, 0.5)",
-        "fx = Slider(1, 5, 1)",
-        "fy = Slider(1, 5, 1)",
-        "t = Slider(0, 10, 0.1)",
-        "P = (Ax*sin(fx*t), Ay*sin(fy*t))",
-        "Curve(Ax*sin(fx*t), Ay*sin(fy*t), t, 0, 10)",
-      ],
       description: "两个垂直方向简谐运动的合成，频率比决定图形形状",
     },
   },
@@ -414,7 +265,16 @@ interface ExampleProblemsProps {
 export default function ExampleProblems({ onSelect }: ExampleProblemsProps) {
   const handleSelect = useCallback(
     (example: ExampleProblem) => {
-      onSelect({ analysis: example.analysis });
+      const desmosExprs = getDesmosExpressions(
+        example.physicsType,
+        example.analysis.knownValues
+      );
+      onSelect({
+        analysis: {
+          ...example.analysis,
+          desmosExprs: desmosExprs || [],
+        },
+      });
     },
     [onSelect]
   );

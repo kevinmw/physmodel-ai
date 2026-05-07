@@ -9,6 +9,7 @@ interface ApiConfig {
   llmUrl: string;
   llmKey: string;
   llmModel: string;
+  desmosKey: string;
 }
 
 const DEFAULT_CONFIG: ApiConfig = {
@@ -18,6 +19,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   llmUrl: "",
   llmKey: "",
   llmModel: "gpt-4o",
+  desmosKey: "",
 };
 
 interface ApiConfigDialogProps {
@@ -158,6 +160,26 @@ export default function ApiConfigDialog({ onClose }: ApiConfigDialogProps) {
           >
             取消
           </button>
+        </div>
+
+        {/* Desmos Config */}
+        <div className="mb-6 mt-6 pt-6 border-t">
+          <h3 className="text-sm font-semibold text-green-600 mb-3">
+            📊 Desmos API Key <span className="text-xs font-normal text-gray-400">免费 - 用于渲染动态模型</span>
+          </h3>
+          <p className="text-xs text-gray-500 mb-2">
+            在 <a href="https://www.desmos.com/my-api" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">desmos.com/my-api</a> 免费注册获取（选择 School/Personal Project）
+          </p>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">API Key</label>
+            <input
+              type="text"
+              value={config.desmosKey}
+              onChange={(e) => handleChange("desmosKey", e.target.value)}
+              placeholder="dcb31709b452b1cf..."
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+          </div>
         </div>
       </div>
     </div>
