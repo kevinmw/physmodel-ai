@@ -6,6 +6,8 @@ import type { DesmosExpr } from "@/lib/desmosTemplates";
 interface DesmosViewerProps {
   expressions: DesmosExpr[];
   physicsType: string;
+  viewport?: { left: number; right: number; top: number; bottom: number };
+  editable?: boolean;
 }
 
 declare global {
@@ -14,7 +16,12 @@ declare global {
   }
 }
 
-export default function DesmosViewer({ expressions, physicsType }: DesmosViewerProps) {
+export default function DesmosViewer({
+  expressions,
+  physicsType,
+  viewport,
+  editable = false,
+}: DesmosViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const calcEltRef = useRef<HTMLDivElement | null>(null);
   const calculatorRef = useRef<any>(null);
@@ -22,6 +29,7 @@ export default function DesmosViewer({ expressions, physicsType }: DesmosViewerP
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [showForces, setShowForces] = useState(true);
   const loadedExprsId = useRef<string | null>(null);
 
   const destroyCalc = useCallback(() => {
@@ -40,7 +48,9 @@ export default function DesmosViewer({ expressions, physicsType }: DesmosViewerP
   const initCalculator = useCallback(() => {
     if (!containerRef.current || !window.Desmos) return;
 
-    const exprsId = expressions.map((e) => e.id + ":" + e.latex).join("|");
+    const exprsId = editable
+      ? expressions.map((e) => e.id).join("|")
+      : expressions.map((e) => e.id + ":" + e.latex).join("|");
     if (exprsId === loadedExprsId.current && calculatorRef.current) return;
     loadedExprsId.current = exprsId;
 
@@ -72,10 +82,19 @@ export default function DesmosViewer({ expressions, physicsType }: DesmosViewerP
       }
     });
 
+    // Apply viewport after expressions load
+    if (viewport) {
+      setTimeout(() => {
+        try {
+          calculator.setMathBounds(viewport);
+        } catch {}
+      }, 200);
+    }
+
     setLoaded(true);
     setIsPlaying(true);
     setLoadError(false);
-  }, [expressions, destroyCalc]);
+  }, [expressions, destroyCalc, viewport]);
 
   useEffect(() => {
     setLoaded(false);
@@ -118,6 +137,18 @@ export default function DesmosViewer({ expressions, physicsType }: DesmosViewerP
     };
   }, [initCalculator, destroyCalc, expressions]);
 
+  // Incremental updates when in editable mode (only latex/bounds changed, not ids)
+  useEffect(() => {
+    if (!editable || !calculatorRef.current || !loaded) return;
+    expressions.forEach((expr) => {
+      try {
+        calculatorRef.current.setExpression(expr);
+      } catch (e) {
+        console.warn("Desmos setExpression error:", e, expr);
+      }
+    });
+  }, [expressions, editable, loaded]);
+
   const handlePlay = useCallback(() => {
     if (!calculatorRef.current) return;
     const newState = !isPlaying;
@@ -149,6 +180,21 @@ export default function DesmosViewer({ expressions, physicsType }: DesmosViewerP
     }
   }, [isFullscreen]);
 
+  const handleToggleForces = useCallback(() => {
+    if (!calculatorRef.current) return;
+    const show = !showForces;
+    expressions.forEach((expr) => {
+      if (expr.id.startsWith("force_")) {
+        try {
+          calculatorRef.current.setExpression({ id: expr.id, hidden: !show });
+        } catch {}
+      }
+    });
+    setShowForces(show);
+  }, [showForces, expressions]);
+
+  const hasForces = expressions.some((e) => e.id.startsWith("force_"));
+
   if (expressions.length === 0) {
     return (
       <div className="bg-white rounded-2xl p-8 shadow-sm border text-center text-gray-400">
@@ -174,6 +220,17 @@ export default function DesmosViewer({ expressions, physicsType }: DesmosViewerP
           <p className="text-xs text-gray-500">{physicsType || "自定义模型"}</p>
         </div>
         <div className="flex gap-2">
+          {hasForces && (
+            <button
+              onClick={handleToggleForces}
+              className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors ${
+                showForces ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-400"
+              }`}
+              title={showForces ? "隐藏力的矢量" : "显示力的矢量"}
+            >
+              {showForces ? "F on" : "F off"}
+            </button>
+          )}
           <button
             onClick={handlePlay}
             className="p-2 rounded-lg hover:bg-gray-100"

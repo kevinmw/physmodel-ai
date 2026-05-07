@@ -6,6 +6,7 @@ import AnalysisPanel from "@/components/AnalysisPanel";
 import DesmosViewer from "@/components/DesmosViewer";
 import ExampleProblems from "@/components/ExampleProblems";
 import ApiConfigDialog from "@/components/ApiConfigDialog";
+import EditPanel from "@/components/EditPanel";
 import type { DesmosExpr } from "@/lib/desmosTemplates";
 
 interface PhysicsAnalysis {
@@ -15,6 +16,7 @@ interface PhysicsAnalysis {
   forces: string[];
   physicsType: string;
   desmosExprs: DesmosExpr[];
+  viewport?: { left: number; right: number; top: number; bottom: number };
   description: string;
 }
 
@@ -34,6 +36,7 @@ export default function Home() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showApiConfig, setShowApiConfig] = useState(false);
   const [apiConfigured, setApiConfigured] = useState(false);
+  const [editingItem, setEditingItem] = useState<HistoryItem | null>(null);
 
   const checkApiConfig = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -119,7 +122,41 @@ export default function Home() {
     });
   }, [analysis]);
 
+  const handleEditSave = useCallback(
+    (item: HistoryItem, mode: "overwrite" | "new") => {
+      setHistory((prev) => {
+        let updated: HistoryItem[];
+        if (mode === "overwrite") {
+          updated = prev.map((h) => (h.id === item.id ? item : h));
+        } else {
+          const newItem: HistoryItem = {
+            ...item,
+            id: Date.now().toString(),
+            timestamp: Date.now(),
+          };
+          updated = [newItem, ...prev].slice(0, 50);
+        }
+        localStorage.setItem("physmodel_history", JSON.stringify(updated));
+        return updated;
+      });
+      setEditingItem(null);
+    },
+    []
+  );
+
   return (
+    <>
+      {/* Edit Mode: full-page panel */}
+      {editingItem && (
+        <EditPanel
+          historyItem={editingItem}
+          onSave={handleEditSave}
+          onCancel={() => setEditingItem(null)}
+        />
+      )}
+
+      {/* Normal Mode */}
+      {!editingItem && (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
@@ -227,6 +264,7 @@ export default function Home() {
             <DesmosViewer
               expressions={analysis?.desmosExprs || []}
               physicsType={analysis?.physicsType || ""}
+              viewport={analysis?.viewport}
             />
           </div>
         )}
@@ -271,19 +309,32 @@ export default function Home() {
                       </div>
                     )}
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setHistory((prev) => {
-                        const updated = prev.filter((h) => h.id !== item.id);
-                        localStorage.setItem("physmodel_history", JSON.stringify(updated));
-                        return updated;
-                      });
-                    }}
-                    className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity text-sm"
-                  >
-                    ×
-                  </button>
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingItem(item);
+                      }}
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-opacity text-sm"
+                      title="编辑"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHistory((prev) => {
+                          const updated = prev.filter((h) => h.id !== item.id);
+                          localStorage.setItem("physmodel_history", JSON.stringify(updated));
+                          return updated;
+                        });
+                      }}
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 transition-opacity text-sm"
+                      title="删除"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -291,5 +342,7 @@ export default function Home() {
         )}
       </main>
     </div>
+      )}
+    </>
   );
 }

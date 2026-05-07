@@ -11,6 +11,7 @@ interface PhysicsAnalysis {
   forces: string[];
   physicsType: string;
   desmosExprs: DesmosExpr[];
+  viewport?: { left: number; right: number; top: number; bottom: number };
   description: string;
 }
 
@@ -265,14 +266,15 @@ interface ExampleProblemsProps {
 export default function ExampleProblems({ onSelect }: ExampleProblemsProps) {
   const handleSelect = useCallback(
     (example: ExampleProblem) => {
-      const desmosExprs = getDesmosExpressions(
+      const result = getDesmosExpressions(
         example.physicsType,
         example.analysis.knownValues
       );
       onSelect({
         analysis: {
           ...example.analysis,
-          desmosExprs: desmosExprs || [],
+          desmosExprs: result?.expressions || [],
+          viewport: result?.viewport,
         },
       });
     },
