@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { getDesmosExpressions } from "@/lib/desmosTemplates";
-import type { DesmosExpr } from "@/lib/desmosTemplates";
+import type { DesmosExpr, Viewport3D } from "@/lib/desmosTemplates";
 
 interface PhysicsAnalysis {
   ocrText: string;
@@ -12,6 +12,8 @@ interface PhysicsAnalysis {
   physicsType: string;
   desmosExprs: DesmosExpr[];
   viewport?: { left: number; right: number; top: number; bottom: number };
+  viewport3d?: Viewport3D;
+  dimension?: '2d' | '3d';
   description: string;
 }
 
@@ -257,6 +259,19 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       description: "两个垂直方向简谐运动的合成，频率比决定图形形状",
     },
   },
+  {
+    title: "圆锥摆运动",
+    icon: "🔻",
+    physicsType: "conical_motion",
+    analysis: {
+      ocrText: "小球在圆锥漏斗内做匀速圆周运动，圆锥高度h=2m，锥角θ=45°，求运动轨迹。",
+      concepts: ["圆锥摆", "匀速圆周运动", "向心力", "受力分析"],
+      knownValues: { h: 2, theta: 45, g: 9.8 },
+      forces: ["重力", "支持力", "向心力"],
+      physicsType: "conical_motion",
+      description: "小球在圆锥漏斗内做匀速圆周运动，3D立体场景",
+    },
+  },
 ];
 
 interface ExampleProblemsProps {
@@ -275,6 +290,8 @@ export default function ExampleProblems({ onSelect }: ExampleProblemsProps) {
           ...example.analysis,
           desmosExprs: result?.expressions || [],
           viewport: result?.viewport,
+          viewport3d: result?.viewport3d,
+          dimension: result?.dimension,
         },
       });
     },

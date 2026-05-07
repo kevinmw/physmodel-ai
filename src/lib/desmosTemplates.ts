@@ -12,9 +12,17 @@ export interface DesmosExpr {
   playing?: boolean;
 }
 
+export interface Viewport3D {
+  xMin: number; xMax: number;
+  yMin: number; yMax: number;
+  zMin: number; zMax: number;
+}
+
 export interface TemplateResult {
   expressions: DesmosExpr[];
   viewport?: { left: number; right: number; top: number; bottom: number };
+  viewport3d?: Viewport3D;
+  dimension?: '2d' | '3d';
 }
 
 type TemplateFn = (kv: Record<string, number>, forces?: string[]) => TemplateResult;
@@ -62,6 +70,24 @@ function buildForceVector(
   return {
     id,
     latex: `(${ox}+t(${dx}),\\ ${oy}+t(${dy}))`,
+    parametricDomain: { min: "0", max: "1" },
+    color,
+    label,
+    showLabel: true,
+  };
+}
+
+/** Build a 3D force vector as a parametric line segment */
+function buildForceVector3D(
+  id: string,
+  ox: string, oy: string, oz: string,
+  dx: string, dy: string, dz: string,
+  color: string,
+  label: string
+): DesmosExpr {
+  return {
+    id,
+    latex: `(${ox}+t(${dx}),\\ ${oy}+t(${dy}),\\ ${oz}+t(${dz}))`,
     parametricDomain: { min: "0", max: "1" },
     color,
     label,
@@ -536,6 +562,67 @@ const TEMPLATES: Record<string, TemplateFn> = {
         },
       ],
       viewport: { left: -1, right: tMax * 1.05, bottom: -Bmax * 1.3, top: Bmax * 1.3 },
+    };
+  },
+
+  conical_motion: (kv) => {
+    const g = kvLookup(kv, ["g"], 9.8);
+    const h = kvLookup(kv, ["h"], 2);
+    const theta = kvLookup(kv, ["theta", "alpha"], 45);
+    const rad = degToRad(theta);
+    const tanTheta = Math.tan(rad);
+    const r = h * tanTheta;
+    const omega = Math.sqrt(g / h);
+    const tMax = Math.ceil(2 * Math.PI / omega * 2 * 10) / 10;
+    const maxR = 5 * tanTheta;
+
+    return {
+      expressions: [
+        makeSlider("h", "h", h, { min: 0.5, max: 5, step: 0.5 }),
+        makeSlider("theta", "\\theta", theta, { min: 20, max: 70, step: 5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+
+        // Hidden relationships
+        { id: "r_def", latex: "r=h\\tan(\\theta)", hidden: true },
+        { id: "omega_def", latex: "\\omega=\\sqrt{\\frac{g}{h}}", hidden: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+
+        // Cone surface (implicit): z^2 = tan^2(theta) * (x^2 + y^2)
+        { id: "cone_surface", latex: "z^{2}=\\tan^{2}(\\theta)(x^{2}+y^{2})", color: C.BLUE, hidden: true },
+
+        // Orbit circle at height h: x^2 + z^2 = r^2
+        { id: "orbit_circle", latex: `x^{2}+z^{2}=(${r})^{2}`, color: C.BLUE, lineStyle: "DASHED" },
+
+        // Ball orbiting: parametric 3D curve (x, y, z) = (r*cos(omega*t), h, r*sin(omega*t))
+        { id: "ball", latex: `(r\\cos(\\omega t),\\ h,\\ r\\sin(\\omega t))`, color: C.RED },
+
+        // Full orbit path
+        {
+          id: "orbit_path",
+          latex: `(r\\cos(s),\\ h,\\ r\\sin(s))`,
+          parametricDomain: { min: "0", max: String(2 * Math.PI) },
+          color: C.BLUE,
+          lineStyle: "DASHED",
+        },
+
+        // Force vectors at ball position
+        buildForceVector3D("force_g", "r\\cos(\\omega t)", "h", "r\\sin(\\omega t)", "0", "-2", "0", C.PURPLE, "mg"),
+        buildForceVector3D("force_n", "r\\cos(\\omega t)", "h", "r\\sin(\\omega t)", "-1.2\\sin(\\theta)\\cos(\\omega t)", "1.2\\cos(\\theta)", "-1.2\\sin(\\theta)\\sin(\\omega t)", C.ORANGE, "N"),
+        buildForceVector3D("force_fc", "r\\cos(\\omega t)", "h", "r\\sin(\\omega t)", "-1.2\\cos(\\omega t)", "0", "-1.2\\sin(\\omega t)", C.RED, "F_{c}"),
+
+        // Height indicator
+        { id: "height_line", latex: `(0,\\ s,\\ 0)`, parametricDomain: { min: "0", max: "h" }, color: C.GREEN, lineStyle: "DASHED" },
+        { id: "h_label", latex: `(0.3,\\ h,\\ 0)`, color: C.GREEN, label: "h", showLabel: true, pointStyle: "NONE" },
+      ],
+      viewport3d: {
+        xMin: -maxR - 1,
+        xMax: maxR + 1,
+        yMin: -0.5,
+        yMax: h + 1.5,
+        zMin: -maxR - 1,
+        zMax: maxR + 1,
+      },
+      dimension: '3d' as const,
     };
   },
 

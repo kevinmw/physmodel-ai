@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { DesmosExpr } from "@/lib/desmosTemplates";
+import type { DesmosExpr, Viewport3D } from "@/lib/desmosTemplates";
 
 interface DesmosViewerProps {
   expressions: DesmosExpr[];
   physicsType: string;
   viewport?: { left: number; right: number; top: number; bottom: number };
+  viewport3d?: Viewport3D;
+  dimension?: '2d' | '3d';
   editable?: boolean;
 }
 
@@ -20,6 +22,8 @@ export default function DesmosViewer({
   expressions,
   physicsType,
   viewport,
+  viewport3d,
+  dimension = '2d',
   editable = false,
 }: DesmosViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,9 +52,9 @@ export default function DesmosViewer({
   const initCalculator = useCallback(() => {
     if (!containerRef.current || !window.Desmos) return;
 
-    const exprsId = editable
+    const exprsId = `${dimension}|${editable
       ? expressions.map((e) => e.id).join("|")
-      : expressions.map((e) => e.id + ":" + e.latex).join("|");
+      : expressions.map((e) => e.id + ":" + e.latex).join("|")}`;
     if (exprsId === loadedExprsId.current && calculatorRef.current) return;
     loadedExprsId.current = exprsId;
 
@@ -62,7 +66,9 @@ export default function DesmosViewer({
     containerRef.current.appendChild(elt);
     calcEltRef.current = elt;
 
-    const calculator = window.Desmos.GraphingCalculator(elt, {
+    const is3D = dimension === '3d';
+    const CalculatorClass = is3D ? window.Desmos.Calculator3D : window.Desmos.GraphingCalculator;
+    const calculator = CalculatorClass(elt, {
       keypad: false,
       expressions: true,
       expressionsTopbar: false,
@@ -82,8 +88,13 @@ export default function DesmosViewer({
       }
     });
 
-    // Apply viewport after expressions load
-    if (viewport) {
+    if (is3D && viewport3d) {
+      setTimeout(() => {
+        try {
+          calculator.setMathBounds(viewport3d);
+        } catch {}
+      }, 200);
+    } else if (viewport) {
       setTimeout(() => {
         try {
           calculator.setMathBounds(viewport);
@@ -94,7 +105,7 @@ export default function DesmosViewer({
     setLoaded(true);
     setIsPlaying(true);
     setLoadError(false);
-  }, [expressions, destroyCalc, viewport]);
+  }, [expressions, destroyCalc, viewport, viewport3d, dimension]);
 
   useEffect(() => {
     setLoaded(false);
@@ -114,8 +125,9 @@ export default function DesmosViewer({
         if (saved) apiKey = JSON.parse(saved).desmosKey || "";
       } catch {}
 
+      const apiVersion = dimension === '3d' ? 'v1.13/3d' : 'v1.12';
       const script = document.createElement("script");
-      script.src = `https://www.desmos.com/api/v1.12/calculator.js${apiKey ? "?apiKey=" + apiKey : ""}`;
+      script.src = `https://www.desmos.com/api/${apiVersion}/calculator.js${apiKey ? "?apiKey=" + apiKey : ""}`;
       script.async = true;
       script.onload = () => {
         if (window.Desmos) {
@@ -216,7 +228,12 @@ export default function DesmosViewer({
     <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
       <div className="p-4 border-b flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Desmos 动态模型</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">Desmos 动态模型</h2>
+            {dimension === '3d' && (
+              <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">3D</span>
+            )}
+          </div>
           <p className="text-xs text-gray-800">{physicsType || "自定义模型"}</p>
         </div>
         <div className="flex gap-2">

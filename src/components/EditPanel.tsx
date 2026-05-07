@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import ExpressionEditor from "./ExpressionEditor";
 import AIAssistantPanel from "./AIAssistantPanel";
 import DesmosViewer from "./DesmosViewer";
-import type { DesmosExpr } from "@/lib/desmosTemplates";
+import type { DesmosExpr, Viewport3D } from "@/lib/desmosTemplates";
 
 interface HistoryItem {
   id: string;
@@ -18,6 +18,8 @@ interface HistoryItem {
     physicsType: string;
     desmosExprs: DesmosExpr[];
     viewport?: { left: number; right: number; top: number; bottom: number };
+    viewport3d?: Viewport3D;
+    dimension?: '2d' | '3d';
     description: string;
   };
 }
@@ -166,6 +168,8 @@ export default function EditPanel({
             expressions={previewExprs}
             physicsType={analysis.physicsType}
             viewport={analysis.viewport}
+            viewport3d={analysis.viewport3d}
+            dimension={analysis.dimension || '2d'}
             editable
           />
         </div>
