@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { getDesmosExpressions } from "@/lib/desmosTemplates";
 import type { DesmosExpr, Viewport3D } from "@/lib/desmosTemplates";
 
@@ -20,14 +20,25 @@ interface PhysicsAnalysis {
 interface ExampleProblem {
   title: string;
   icon: string;
+  category: string;
   physicsType: string;
   analysis: Omit<PhysicsAnalysis, "desmosExprs"> & { knownValues: Record<string, number> };
 }
 
+const CATEGORIES = [
+  { key: "all", label: "全部" },
+  { key: "kinematics", label: "运动学" },
+  { key: "dynamics", label: "力学" },
+  { key: "oscillations", label: "振动与波" },
+  { key: "em", label: "电磁学" },
+];
+
 const EXAMPLE_PROBLEMS: ExampleProblem[] = [
+  // === 运动学 ===
   {
     title: "抛体运动",
     icon: "🎯",
+    category: "kinematics",
     physicsType: "projectile_motion",
     analysis: {
       ocrText: "一物体以初速度v0=20m/s，与水平方向成45°角抛出，求运动轨迹。",
@@ -39,21 +50,9 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
     },
   },
   {
-    title: "单摆运动",
-    icon: "🔄",
-    physicsType: "pendulum",
-    analysis: {
-      ocrText: "一单摆摆长L=2m，最大偏角30°，求摆动过程。",
-      concepts: ["单摆", "简谐运动", "周期"],
-      knownValues: { L: 2, alpha0: 30, g: 9.8 },
-      forces: ["重力", "绳的拉力"],
-      physicsType: "pendulum",
-      description: "单摆在重力作用下做简谐运动",
-    },
-  },
-  {
     title: "自由落体",
     icon: "⬇️",
+    category: "kinematics",
     physicsType: "free_fall",
     analysis: {
       ocrText: "一物体从h=45m高处自由下落，求下落过程。",
@@ -65,47 +64,9 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
     },
   },
   {
-    title: "斜面滑块",
-    icon: "📐",
-    physicsType: "inclined_plane",
-    analysis: {
-      ocrText: "一滑块从倾角30°的斜面顶端由静止下滑，摩擦系数0.2，求运动过程。",
-      concepts: ["斜面", "摩擦力", "牛顿第二定律"],
-      knownValues: { angle: 30, mu: 0.2, g: 9.8 },
-      forces: ["重力", "支持力", "摩擦力"],
-      physicsType: "inclined_plane",
-      description: "滑块在斜面上受重力、支持力和摩擦力作用下滑",
-    },
-  },
-  {
-    title: "匀速圆周运动",
-    icon: "⭕",
-    physicsType: "circular_motion",
-    analysis: {
-      ocrText: "一物体做半径r=3m的匀速圆周运动，角速度ω=2rad/s，求运动轨迹。",
-      concepts: ["圆周运动", "向心力", "角速度"],
-      knownValues: { r: 3, omega: 2 },
-      forces: ["向心力"],
-      physicsType: "circular_motion",
-      description: "物体在向心力作用下做匀速圆周运动",
-    },
-  },
-  {
-    title: "弹簧振子",
-    icon: "〰️",
-    physicsType: "spring",
-    analysis: {
-      ocrText: "一弹簧振子劲度系数k=50N/m，质量m=2kg，振幅A=0.1m，求振动过程。",
-      concepts: ["弹簧振子", "简谐运动", "胡克定律"],
-      knownValues: { k: 50, m: 2, A: 0.1 },
-      forces: ["弹力", "重力"],
-      physicsType: "spring",
-      description: "弹簧振子在弹力作用下做简谐运动",
-    },
-  },
-  {
     title: "竖直上抛",
     icon: "⬆️",
+    category: "kinematics",
     physicsType: "vertical_throw",
     analysis: {
       ocrText: "一物体以初速度v0=20m/s竖直上抛，求运动过程。",
@@ -119,6 +80,7 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
   {
     title: "平抛运动",
     icon: "↗️",
+    category: "kinematics",
     physicsType: "horizontal_throw",
     analysis: {
       ocrText: "一物体从h=20m高处以v0=10m/s水平抛出，求运动轨迹。",
@@ -130,73 +92,9 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
     },
   },
   {
-    title: "弹性碰撞",
-    icon: "💥",
-    physicsType: "elastic_collision",
-    analysis: {
-      ocrText: "质量m1=2kg的小球以v1=5m/s与静止的m2=3kg小球发生弹性碰撞，求碰撞前后运动。",
-      concepts: ["弹性碰撞", "动量守恒", "能量守恒"],
-      knownValues: { m1: 2, m2: 3, v1: 5, v2: 0 },
-      forces: ["碰撞力"],
-      physicsType: "elastic_collision",
-      description: "两球弹性碰撞，动量和动能均守恒",
-    },
-  },
-  {
-    title: "带电粒子在磁场中",
-    icon: "🧲",
-    physicsType: "magnetic_field",
-    analysis: {
-      ocrText: "一带电粒子质量m=1kg，电荷量q=1C，以v=5m/s垂直进入B=2T的匀强磁场，求运动轨迹。",
-      concepts: ["洛伦兹力", "圆周运动", "带电粒子在磁场中运动"],
-      knownValues: { m: 1, q: 1, v: 5, B: 2 },
-      forces: ["洛伦兹力"],
-      physicsType: "magnetic_field",
-      description: "带电粒子在匀强磁场中受洛伦兹力做匀速圆周运动",
-    },
-  },
-  {
-    title: "波的叠加",
-    icon: "🌊",
-    physicsType: "wave_superposition",
-    analysis: {
-      ocrText: "两列波y1=2sin(2x)和y2=2sin(3x)在某区域叠加，求合成波形。",
-      concepts: ["波的叠加", "干涉", "波的合成"],
-      knownValues: { A1: 2, A2: 2, k1: 2, k2: 3 },
-      forces: [],
-      physicsType: "wave_superposition",
-      description: "两列波的叠加，红线为合成波，展示干涉现象",
-    },
-  },
-  {
-    title: "能量守恒(过山车)",
-    icon: "🎢",
-    physicsType: "energy_conservation",
-    analysis: {
-      ocrText: "一物体从h=10m高处沿光滑曲面滑下，求各位置的速率。",
-      concepts: ["机械能守恒", "动能", "势能"],
-      knownValues: { h: 10, g: 9.8, m: 1 },
-      forces: ["重力", "支持力"],
-      physicsType: "energy_conservation",
-      description: "物体沿光滑曲面下滑，动能和势能相互转化，总机械能守恒",
-    },
-  },
-  {
-    title: "阻尼振动",
-    icon: "📉",
-    physicsType: "damped_oscillation",
-    analysis: {
-      ocrText: "一弹簧振子做阻尼振动，振幅逐渐衰减，求振动图像。",
-      concepts: ["阻尼振动", "振幅衰减", "包络线"],
-      knownValues: { A: 3, b: 0.3, omega: 3 },
-      forces: ["弹力", "阻力"],
-      physicsType: "damped_oscillation",
-      description: "阻尼振动：振幅随时间指数衰减，包络线为e^(-bt)",
-    },
-  },
-  {
     title: "匀变速直线运动",
     icon: "📊",
+    category: "kinematics",
     physicsType: "uniform_acceleration",
     analysis: {
       ocrText: "一物体初速度v0=5m/s，加速度a=2m/s²，求v-t和s-t图像。",
@@ -208,8 +106,192 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
     },
   },
   {
+    title: "多段匀变速运动",
+    icon: "📈",
+    category: "kinematics",
+    physicsType: "two_stage_motion",
+    analysis: {
+      ocrText: "汽车先以a1=3m/s²加速4s，再以a2=-2m/s²减速，求v-t图像。",
+      concepts: ["多段运动", "v-t图像", "匀变速运动"],
+      knownValues: { v0: 0, a1: 3, a2: -2, t1: 4 },
+      forces: ["牵引力", "阻力"],
+      physicsType: "two_stage_motion",
+      description: "两段匀变速运动的v-t图像，展示加速度突变",
+    },
+  },
+  {
+    title: "相对运动",
+    icon: "↔️",
+    category: "kinematics",
+    physicsType: "relative_motion",
+    analysis: {
+      ocrText: "两车沿同方向运动，v1=10m/s，v2=6m/s，初始间距d0=20m。",
+      concepts: ["相对运动", "位移关系"],
+      knownValues: { v1: 10, v2: 6, d0: 20 },
+      forces: [],
+      physicsType: "relative_motion",
+      description: "两物体相对运动，观察距离随时间的变化",
+    },
+  },
+  {
+    title: "追及相遇",
+    icon: "🚗",
+    category: "kinematics",
+    physicsType: "pursuit_problem",
+    analysis: {
+      ocrText: "A车以vA=8m/s匀速运动，前方d0=15m处B车以vB=5m/s匀速运动，求何时追上。",
+      concepts: ["追及问题", "相对运动", "位移关系"],
+      knownValues: { vA: 8, vB: 5, d0: 15 },
+      forces: [],
+      physicsType: "pursuit_problem",
+      description: "两车追及问题：追上时刻取决于速度差和初始距离",
+    },
+  },
+  // === 力学 ===
+  {
+    title: "斜面滑块",
+    icon: "📐",
+    category: "dynamics",
+    physicsType: "inclined_plane",
+    analysis: {
+      ocrText: "一滑块从倾角30°的斜面顶端由静止下滑，摩擦系数0.2，求运动过程。",
+      concepts: ["斜面", "摩擦力", "牛顿第二定律"],
+      knownValues: { angle: 30, mu: 0.2, g: 9.8 },
+      forces: ["重力", "支持力", "摩擦力"],
+      physicsType: "inclined_plane",
+      description: "滑块在斜面上受重力、支持力和摩擦力作用下滑",
+    },
+  },
+  {
+    title: "匀速圆周运动",
+    icon: "⭕",
+    category: "dynamics",
+    physicsType: "circular_motion",
+    analysis: {
+      ocrText: "一物体做半径r=3m的匀速圆周运动，角速度ω=2rad/s，求运动轨迹。",
+      concepts: ["圆周运动", "向心力", "角速度"],
+      knownValues: { r: 3, omega: 2 },
+      forces: ["向心力"],
+      physicsType: "circular_motion",
+      description: "物体在向心力作用下做匀速圆周运动",
+    },
+  },
+  {
+    title: "竖直圆周运动",
+    icon: "🎡",
+    category: "dynamics",
+    physicsType: "vertical_circular",
+    analysis: {
+      ocrText: "物体在竖直面内做半径r=3m的圆周运动，最低点速度v0=8m/s。",
+      concepts: ["竖直圆周运动", "向心力", "临界速度"],
+      knownValues: { r: 3, v0: 8, g: 9.8 },
+      forces: ["重力", "弹力/支持力"],
+      physicsType: "vertical_circular",
+      description: "竖直面内圆周运动，重力和弹力合力提供向心力",
+    },
+  },
+  {
+    title: "弹性碰撞",
+    icon: "💥",
+    category: "dynamics",
+    physicsType: "elastic_collision",
+    analysis: {
+      ocrText: "质量m1=2kg的小球以v1=5m/s与静止的m2=3kg小球发生弹性碰撞，求碰撞前后运动。",
+      concepts: ["弹性碰撞", "动量守恒", "能量守恒"],
+      knownValues: { m1: 2, m2: 3, v1: 5, v2: 0 },
+      forces: ["碰撞力"],
+      physicsType: "elastic_collision",
+      description: "两球弹性碰撞，动量和动能均守恒",
+    },
+  },
+  {
+    title: "能量守恒(过山车)",
+    icon: "🎢",
+    category: "dynamics",
+    physicsType: "energy_conservation",
+    analysis: {
+      ocrText: "一物体从h=10m高处沿光滑曲面滑下，求各位置的速率。",
+      concepts: ["机械能守恒", "动能", "势能"],
+      knownValues: { h: 10, g: 9.8, m: 1 },
+      forces: ["重力", "支持力"],
+      physicsType: "energy_conservation",
+      description: "物体沿光滑曲面下滑，动能和势能相互转化，总机械能守恒",
+    },
+  },
+  {
+    title: "力的合成与分解",
+    icon: "🔀",
+    category: "dynamics",
+    physicsType: "vector_addition",
+    analysis: {
+      ocrText: "两个力F1=5N方向30°，F2=4N方向120°，求合力。",
+      concepts: ["力的合成", "平行四边形法则", "力的分解"],
+      knownValues: { F1: 5, F2: 4, theta1: 30, theta2: 120 },
+      forces: ["F1", "F2", "合力"],
+      physicsType: "vector_addition",
+      description: "两力合成：平行四边形法则求合力，可调角度和大小",
+    },
+  },
+  {
+    title: "阿特伍德机",
+    icon: "🏗",
+    category: "dynamics",
+    physicsType: "atwood_machine",
+    analysis: {
+      ocrText: "阿特伍德机两端悬挂m1=3kg和m2=5kg的重物，求加速度和张力。",
+      concepts: ["阿特伍德机", "牛顿第二定律", "连接体"],
+      knownValues: { m1: 3, m2: 5, g: 9.8 },
+      forces: ["重力", "绳的张力"],
+      physicsType: "atwood_machine",
+      description: "跨过滑轮的两物体，质量不同产生加速度",
+    },
+  },
+  {
+    title: "杠杆平衡",
+    icon: "⚖",
+    category: "dynamics",
+    physicsType: "lever_balance",
+    analysis: {
+      ocrText: "杠杆左臂L1=3m挂F1=6N重物，右臂L2=4m挂F2=4N重物，判断是否平衡。",
+      concepts: ["力矩", "杠杆平衡", "转动平衡条件"],
+      knownValues: { F1: 6, F2: 4, L1: 3, L2: 4 },
+      forces: ["F1", "F2"],
+      physicsType: "lever_balance",
+      description: "杠杆平衡条件：F1×L1 = F2×L2，可调力和力臂",
+    },
+  },
+  {
+    title: "连接体",
+    icon: "🔗",
+    category: "dynamics",
+    physicsType: "connected_bodies",
+    analysis: {
+      ocrText: "两物块m1=2kg和m2=4kg用轻绳连接，水平拉力F=12N，摩擦系数μ=0.2。",
+      concepts: ["连接体", "整体法与隔离法", "牛顿第二定律"],
+      knownValues: { m1: 2, m2: 4, F: 12, mu: 0.2 },
+      forces: ["拉力F", "摩擦力", "绳的张力"],
+      physicsType: "connected_bodies",
+      description: "两物块通过绳连接，整体加速度相同，隔离法求张力",
+    },
+  },
+  {
+    title: "斜面连接体",
+    icon: "⛰",
+    category: "dynamics",
+    physicsType: "inclined_connected",
+    analysis: {
+      ocrText: "斜面倾角30°，m2=2kg在斜面上通过绳子跨过滑轮连接悬挂的m1=3kg。",
+      concepts: ["斜面", "连接体", "滑轮"],
+      knownValues: { m1: 3, m2: 2, angle: 30, mu: 0, g: 9.8 },
+      forces: ["重力", "支持力", "张力"],
+      physicsType: "inclined_connected",
+      description: "斜面+滑轮+悬挂物的连接体问题",
+    },
+  },
+  {
     title: "双星系统",
     icon: "⭐",
+    category: "dynamics",
     physicsType: "binary_star",
     analysis: {
       ocrText: "两颗恒星组成双星系统，质量分别为m1和m2，间距为d，求运动轨迹。",
@@ -220,22 +302,67 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       description: "双星绕公共质心做圆周运动，质量越大离质心越近",
     },
   },
+  // === 振动与波 ===
   {
-    title: "电场偏转",
-    icon: "⚡",
-    physicsType: "electric_deflection",
+    title: "单摆运动",
+    icon: "🔄",
+    category: "oscillations",
+    physicsType: "pendulum",
     analysis: {
-      ocrText: "一带电粒子以v0垂直进入匀强电场E，求偏转轨迹。",
-      concepts: ["电场偏转", "类平抛运动", "电场力"],
-      knownValues: { v0: 5, E: 3, q: 1, m: 1 },
-      forces: ["电场力"],
-      physicsType: "electric_deflection",
-      description: "带电粒子在匀强电场中偏转，轨迹为抛物线",
+      ocrText: "一单摆摆长L=2m，最大偏角30°，求摆动过程。",
+      concepts: ["单摆", "简谐运动", "周期"],
+      knownValues: { L: 2, alpha0: 30, g: 9.8 },
+      forces: ["重力", "绳的拉力"],
+      physicsType: "pendulum",
+      description: "单摆在重力作用下做简谐运动",
+    },
+  },
+  {
+    title: "弹簧振子",
+    icon: "〰️",
+    category: "oscillations",
+    physicsType: "spring",
+    analysis: {
+      ocrText: "一弹簧振子劲度系数k=50N/m，质量m=2kg，振幅A=0.1m，求振动过程。",
+      concepts: ["弹簧振子", "简谐运动", "胡克定律"],
+      knownValues: { k: 50, m: 2, A: 0.1 },
+      forces: ["弹力", "重力"],
+      physicsType: "spring",
+      description: "弹簧振子在弹力作用下做简谐运动",
+    },
+  },
+  {
+    title: "竖直弹簧振子",
+    icon: "🔧",
+    category: "oscillations",
+    physicsType: "vertical_spring",
+    analysis: {
+      ocrText: "竖直弹簧劲度系数k=20N/m，挂质量m=2kg物体，振幅A=1.5m。",
+      concepts: ["竖直弹簧", "简谐运动", "平衡位置"],
+      knownValues: { k: 20, m: 2, A: 1.5, g: 9.8 },
+      forces: ["重力", "弹力"],
+      physicsType: "vertical_spring",
+      description: "竖直弹簧振子：平衡位置下移mg/k，仍在做简谐运动",
+    },
+  },
+  {
+    title: "阻尼振动",
+    icon: "📉",
+    category: "oscillations",
+    physicsType: "damped_oscillation",
+    analysis: {
+      ocrText: "一弹簧振子做阻尼振动，振幅逐渐衰减，求振动图像。",
+      concepts: ["阻尼振动", "振幅衰减", "包络线"],
+      knownValues: { A: 3, b: 0.3, omega: 3 },
+      forces: ["弹力", "阻力"],
+      physicsType: "damped_oscillation",
+      description: "阻尼振动：振幅随时间指数衰减，包络线为e^(-bt)",
     },
   },
   {
     title: "受迫振动/共振",
     icon: "📢",
+    category: "oscillations",
     physicsType: "forced_oscillation",
     analysis: {
       ocrText: "一振动系统的固有频率f0=2Hz，受周期性驱动力作用，频率f可调，求稳态振幅。",
@@ -247,8 +374,23 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
     },
   },
   {
+    title: "波的叠加",
+    icon: "🌊",
+    category: "oscillations",
+    physicsType: "wave_superposition",
+    analysis: {
+      ocrText: "两列波y1=2sin(2x)和y2=2sin(3x)在某区域叠加，求合成波形。",
+      concepts: ["波的叠加", "干涉", "波的合成"],
+      knownValues: { A1: 2, A2: 2, k1: 2, k2: 3 },
+      forces: [],
+      physicsType: "wave_superposition",
+      description: "两列波的叠加，红线为合成波，展示干涉现象",
+    },
+  },
+  {
     title: "李萨如图形",
     icon: "🔮",
+    category: "oscillations",
     physicsType: "lissajous",
     analysis: {
       ocrText: "两个相互垂直的简谐运动x=3sin(2t), y=3sin(3t)，求合运动轨迹。",
@@ -262,6 +404,7 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
   {
     title: "圆锥摆运动",
     icon: "🔻",
+    category: "oscillations",
     physicsType: "conical_motion",
     analysis: {
       ocrText: "小球在圆锥漏斗内做匀速圆周运动，圆锥高度h=2m，锥角θ=45°，求运动轨迹。",
@@ -272,6 +415,35 @@ const EXAMPLE_PROBLEMS: ExampleProblem[] = [
       description: "小球在圆锥漏斗内做匀速圆周运动，3D立体场景",
     },
   },
+  // === 电磁学 ===
+  {
+    title: "带电粒子在磁场中",
+    icon: "🧲",
+    category: "em",
+    physicsType: "magnetic_field",
+    analysis: {
+      ocrText: "一带电粒子质量m=1kg，电荷量q=1C，以v=5m/s垂直进入B=2T的匀强磁场，求运动轨迹。",
+      concepts: ["洛伦兹力", "圆周运动", "带电粒子在磁场中运动"],
+      knownValues: { m: 1, q: 1, v: 5, B: 2 },
+      forces: ["洛伦兹力"],
+      physicsType: "magnetic_field",
+      description: "带电粒子在匀强磁场中受洛伦兹力做匀速圆周运动",
+    },
+  },
+  {
+    title: "电场偏转",
+    icon: "⚡",
+    category: "em",
+    physicsType: "electric_deflection",
+    analysis: {
+      ocrText: "一带电粒子以v0垂直进入匀强电场E，求偏转轨迹。",
+      concepts: ["电场偏转", "类平抛运动", "电场力"],
+      knownValues: { v0: 5, E: 3, q: 1, m: 1 },
+      forces: ["电场力"],
+      physicsType: "electric_deflection",
+      description: "带电粒子在匀强电场中偏转，轨迹为抛物线",
+    },
+  },
 ];
 
 interface ExampleProblemsProps {
@@ -279,6 +451,11 @@ interface ExampleProblemsProps {
 }
 
 export default function ExampleProblems({ onSelect }: ExampleProblemsProps) {
+  const [filter, setFilter] = useState("all");
+  const filtered = filter === "all"
+    ? EXAMPLE_PROBLEMS
+    : EXAMPLE_PROBLEMS.filter((e) => e.category === filter);
+
   const handleSelect = useCallback(
     (example: ExampleProblem) => {
       const result = getDesmosExpressions(
@@ -300,12 +477,29 @@ export default function ExampleProblems({ onSelect }: ExampleProblemsProps) {
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">📚 示例物理模型</h2>
-      <p className="text-sm text-gray-800 mb-3">
-        选择一个示例，快速预览动态物理模型效果
-      </p>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {EXAMPLE_PROBLEMS.map((example) => (
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">示例物理模型</h2>
+      <div className="flex gap-2 overflow-x-auto pb-3 mb-4">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.key}
+            onClick={() => setFilter(c.key)}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              filter === c.key
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            {c.label}
+            <span className="ml-1 text-xs opacity-70">
+              {c.key === "all"
+                ? EXAMPLE_PROBLEMS.length
+                : EXAMPLE_PROBLEMS.filter((e) => e.category === c.key).length}
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {filtered.map((example) => (
           <button
             key={example.physicsType}
             onClick={() => handleSelect(example)}

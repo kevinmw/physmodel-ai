@@ -619,6 +619,323 @@ const TEMPLATES: Record<string, TemplateFn> = {
     };
   },
 
+  // ========== 运动与力学新增模板 ==========
+
+  /** 力的合成与分解 */
+  vector_addition: (kv) => {
+    const F1 = kvLookup(kv, ["F1"], 5);
+    const F2 = kvLookup(kv, ["F2"], 4);
+    const theta1 = kvLookup(kv, ["theta1"], 30);
+    const theta2 = kvLookup(kv, ["theta2"], 120);
+    const maxF = Math.max(F1, F2) * 2;
+    return {
+      expressions: [
+        makeSlider("F1", "F_{1}", F1, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("F2", "F_{2}", F2, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("theta1", "\\theta_{1}", theta1, { min: 0, max: 360, step: 5 }),
+        makeSlider("theta2", "\\theta_{2}", theta2, { min: 0, max: 360, step: 5 }),
+        { id: "origin", latex: "(0,0)", color: C.BLACK, pointStyle: "CROSS", label: "O", showLabel: true },
+        // F1 vector
+        { id: "f1_vec", latex: `(uF_{1}\\cos(\\theta_{1}),\\ uF_{1}\\sin(\\theta_{1}))`, parametricDomain: { min: "0", max: "1" }, color: C.RED, label: "F_{1}", showLabel: true },
+        // F2 vector
+        { id: "f2_vec", latex: `(uF_{2}\\cos(\\theta_{2}),\\ uF_{2}\\sin(\\theta_{2}))`, parametricDomain: { min: "0", max: "1" }, color: C.BLUE, label: "F_{2}", showLabel: true },
+        // Resultant F = F1 + F2
+        { id: "fr_vec", latex: `(u(F_{1}\\cos(\\theta_{1})+F_{2}\\cos(\\theta_{2})),\\ u(F_{1}\\sin(\\theta_{1})+F_{2}\\sin(\\theta_{2})))`, parametricDomain: { min: "0", max: "1" }, color: C.GREEN, label: "F_{合}", showLabel: true },
+        // Parallelogram dashed lines
+        { id: "pg_line1", latex: `(F_{1}\\cos(\\theta_{1})+uF_{2}\\cos(\\theta_{2}),\\ F_{1}\\sin(\\theta_{1})+uF_{2}\\sin(\\theta_{2}))`, parametricDomain: { min: "0", max: "1" }, color: C.GRAY, lineStyle: "DASHED" },
+        { id: "pg_line2", latex: `(F_{2}\\cos(\\theta_{2})+uF_{1}\\cos(\\theta_{1}),\\ F_{2}\\sin(\\theta_{2})+uF_{1}\\sin(\\theta_{1}))`, parametricDomain: { min: "0", max: "1" }, color: C.GRAY, lineStyle: "DASHED" },
+      ],
+      viewport: { left: -maxF * 0.3, right: maxF, bottom: -maxF * 0.5, top: maxF * 0.7 },
+    };
+  },
+
+  /** 多段匀变速运动 (v-t图) */
+  two_stage_motion: (kv) => {
+    const v0 = kvLookup(kv, ["v0"], 0);
+    const a1 = kvLookup(kv, ["a1"], 3);
+    const a2 = kvLookup(kv, ["a2"], -2);
+    const t1 = kvLookup(kv, ["t1"], 4);
+    const tMax = 12;
+    const v1 = v0 + a1 * t1;
+    const vMax = Math.max(v0, v1, v1 + a2 * (tMax - t1));
+    const vMin = Math.min(0, v0, v1, v1 + a2 * (tMax - t1));
+    return {
+      expressions: [
+        makeSlider("v0", "v_{0}", v0, { min: 0, max: 20, step: 1 }),
+        makeSlider("a1", "a_{1}", a1, { min: -5, max: 5, step: 0.5 }),
+        makeSlider("a2", "a_{2}", a2, { min: -5, max: 5, step: 0.5 }),
+        makeSlider("t1", "t_{1}", t1, { min: 1, max: 10, step: 0.5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        // Velocity piecewise: stage 1 and stage 2
+        { id: "vt_curve", latex: "y=\\left\\{x<t_{1}:v_{0}+a_{1}x,\\ v_{0}+a_{1}t_{1}+a_{2}(x-t_{1})\\right\\}", color: C.BLUE },
+        // Moving point on v-t graph
+        { id: "point", latex: "(t,\\ \\left\\{t<t_{1}:v_{0}+a_{1}t,\\ v_{0}+a_{1}t_{1}+a_{2}(t-t_{1})\\right\\})", color: C.RED },
+        // Stage divider
+        { id: "divider", latex: `x=t_{1}`, color: C.GRAY, lineStyle: "DASHED" },
+        // Zero line
+        { id: "zero_line", latex: "y=0", color: C.BLACK, lineStyle: "SOLID" },
+      ],
+      viewport: { left: -1, right: tMax * 1.05, bottom: vMin * 1.2 - 1, top: vMax * 1.2 + 1 },
+    };
+  },
+
+  /** 阿特伍德机 */
+  atwood_machine: (kv) => {
+    const m1 = kvLookup(kv, ["m1"], 3);
+    const m2 = kvLookup(kv, ["m2"], 5);
+    const g = kvLookup(kv, ["g"], 9.8);
+    const accel = (m2 - m1) / (m1 + m2) * g;
+    const tMax = 3;
+    const dMax = 0.5 * Math.abs(accel) * tMax * tMax;
+    const hPulley = 5;
+    return {
+      expressions: [
+        makeSlider("m1", "m_{1}", m1, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("m2", "m_{2}", m2, { min: 1, max: 10, step: 0.5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+        { id: "accel", latex: "a=\\frac{m_{2}-m_{1}}{m_{1}+m_{2}}g", hidden: true },
+        // Pulley
+        { id: "pulley", latex: "(0,5)", color: C.GRAY, pointStyle: "CROSS", label: "P", showLabel: true },
+        // Left rope + mass m1 (goes down when a<0, up when a>0)
+        { id: "rope_l", latex: `(-1,\\ 5-u(5-\\frac{1}{2}at^{2}))`, parametricDomain: { min: "0", max: "1" }, color: C.GRAY },
+        { id: "mass1", latex: "(-1,\\ \\frac{1}{2}at^{2})", color: C.RED, label: "m_{1}", showLabel: true },
+        // Right rope + mass m2
+        { id: "rope_r", latex: `(1,\\ 5-u(5+\\frac{1}{2}at^{2}))`, parametricDomain: { min: "0", max: "1" }, color: C.GRAY },
+        { id: "mass2", latex: `(1,\\ -\\frac{1}{2}at^{2})`, color: C.BLUE, label: "m_{2}", showLabel: true },
+      ],
+      viewport: { left: -3, right: 3, bottom: -dMax - 2, top: hPulley + 1 },
+    };
+  },
+
+  /** 竖直面圆周运动 (过山车) */
+  vertical_circular: (kv) => {
+    const r = kvLookup(kv, ["r"], 3);
+    const g = kvLookup(kv, ["g"], 9.8);
+    const v0 = kvLookup(kv, ["v0"], 8);
+    const tMax = Math.ceil(2 * Math.PI * r / v0 * 2 * 10) / 10;
+    const omega0 = v0 / r;
+    return {
+      expressions: [
+        makeSlider("r", "r", r, { min: 1, max: 5, step: 0.5 }),
+        makeSlider("v0", "v_{0}", v0, { min: 2, max: 15, step: 0.5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "omega", latex: "\\omega=\\frac{v_{0}}{r}", hidden: true },
+        // Center of circle
+        { id: "center", latex: "(0,r)", color: C.GRAY, pointStyle: "CROSS", label: "O", showLabel: true },
+        // Circle track
+        { id: "track", latex: "x^{2}+(y-r)^{2}=r^{2}", color: C.BLUE, lineStyle: "DASHED" },
+        // Ball at angle ωt from bottom: (r*sin(ωt), r - r*cos(ωt))
+        { id: "ball", latex: "(r\\sin(\\omega t),\\ r-r\\cos(\\omega t))", color: C.RED },
+        // Gravity force
+        buildForceVector("force_g", "r\\sin(\\omega t)", "r-r\\cos(\\omega t)", "0", "-2", C.PURPLE, "mg"),
+        // Centripetal direction (toward center)
+        buildForceVector("force_n", "r\\sin(\\omega t)", "r-r\\cos(\\omega t)", "-1.2\\sin(\\omega t)", "1.2\\cos(\\omega t)", C.GREEN, "N"),
+      ],
+      viewport: { left: -r * 1.5, right: r * 1.5, bottom: -r * 0.5, top: r * 2.5 },
+    };
+  },
+
+  /** 相对运动 (两车追及) */
+  relative_motion: (kv) => {
+    const v1 = kvLookup(kv, ["v1"], 10);
+    const v2 = kvLookup(kv, ["v2"], 6);
+    const d0 = kvLookup(kv, ["d0", "d"], 20);
+    const a1 = kvLookup(kv, ["a1"], 0);
+    const tMax = Math.ceil(d0 / Math.abs(v1 - v2) * 2 * 10) / 10;
+    const xMax = Math.max(v1, v2) * tMax + d0;
+    return {
+      expressions: [
+        makeSlider("v1", "v_{1}", v1, { min: 1, max: 30, step: 1 }),
+        makeSlider("v2", "v_{2}", v2, { min: 1, max: 30, step: 1 }),
+        makeSlider("d0", "d_{0}", d0, { min: 5, max: 50, step: 5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        // Car A starts at origin, moves right
+        { id: "car_a", latex: "(v_{1}t,\\ 1)", color: C.RED, label: "A", showLabel: true },
+        { id: "trail_a", latex: "(v_{1}s,\\ 1)", parametricDomain: { min: "0", max: String(tMax) }, color: C.RED, lineStyle: "DASHED" },
+        // Car B starts at d0 ahead, moves right
+        { id: "car_b", latex: "(d_{0}+v_{2}t,\\ -1)", color: C.BLUE, label: "B", showLabel: true },
+        { id: "trail_b", latex: `(d_{0}+v_{2}s,\\ -1)`, parametricDomain: { min: "0", max: String(tMax) }, color: C.BLUE, lineStyle: "DASHED" },
+        // Distance between them
+        { id: "dist_line", latex: `(v_{1}t+u(d_{0}+v_{2}t-v_{1}t),\\ 1+u(-2))`, parametricDomain: { min: "0", max: "1" }, color: C.GRAY, lineStyle: "DASHED" },
+        // Distance value
+        { id: "dist_val", latex: `(\\frac{v_{1}t+d_{0}+v_{2}t}{2},\\ 0)`, color: C.GRAY, label: "Δd", showLabel: true },
+      ],
+      viewport: { left: -5, right: xMax * 0.6, bottom: -3, top: 3 },
+    };
+  },
+
+  /** 力矩与杠杆平衡 */
+  lever_balance: (kv) => {
+    const F1 = kvLookup(kv, ["F1"], 6);
+    const F2 = kvLookup(kv, ["F2"], 4);
+    const L1 = kvLookup(kv, ["L1"], 3);
+    const L2 = kvLookup(kv, ["L2"], 4);
+    const leverLen = L1 + L2;
+    return {
+      expressions: [
+        makeSlider("F1", "F_{1}", F1, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("F2", "F_{2}", F2, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("L1", "L_{1}", L1, { min: 1, max: 8, step: 0.5 }),
+        makeSlider("L2", "L_{2}", L2, { min: 1, max: 8, step: 0.5 }),
+        // Lever bar
+        { id: "lever", latex: `(-L_{1}+u(L_{1}+L_{2}),\\ 0)`, parametricDomain: { min: "0", max: "1" }, color: C.BLACK },
+        // Pivot point
+        { id: "pivot", latex: "(0,0)", color: C.GRAY, pointStyle: "CROSS", label: "O", showLabel: true },
+        // Triangle support under pivot
+        { id: "support", latex: "(-0.3,-0.5)", color: C.GRAY },
+        { id: "support_r", latex: "(0.3,-0.5)", color: C.GRAY },
+        // F1 downward arrow at x=-L1
+        { id: "f1_vec", latex: `(-L_{1},\\ uF_{1})`, parametricDomain: { min: "0", max: "1" }, color: C.RED, label: "F_{1}", showLabel: true },
+        // F2 downward arrow at x=L2
+        { id: "f2_vec", latex: `(L_{2},\\ uF_{2})`, parametricDomain: { min: "0", max: "1" }, color: C.BLUE, label: "F_{2}", showLabel: true },
+        // Torque values (hidden, for reference)
+        { id: "torque1", latex: `M_{1}=F_{1}L_{1}`, hidden: true },
+        { id: "torque2", latex: `M_{2}=F_{2}L_{2}`, hidden: true },
+        // Balance indicator
+        { id: "balance", latex: `(0,\\ \\left\\{F_{1}L_{1}=F_{2}L_{2}:2,\\ -2\\right\\})`, color: C.GREEN, label: "\\left\\{F_{1}L_{1}=F_{2}L_{2}:\\ 平衡,\\ 不平衡\\right\\}", showLabel: true },
+      ],
+      viewport: { left: -leverLen, right: leverLen, bottom: -Math.max(F1, F2) - 1, top: Math.max(F1, F2) + 2 },
+    };
+  },
+
+  /** 连接体 (两物块通过绳连接) */
+  connected_bodies: (kv) => {
+    const m1 = kvLookup(kv, ["m1"], 2);
+    const m2 = kvLookup(kv, ["m2"], 4);
+    const F = kvLookup(kv, ["F"], 12);
+    const mu = kvLookup(kv, ["mu"], 0.2);
+    const g = kvLookup(kv, ["g"], 9.8);
+    const accel = F / (m1 + m2) - mu * g;
+    const tMax = accel > 0 ? 4 : 2;
+    const dMax = accel > 0 ? 0.5 * accel * tMax * tMax : 0;
+    return {
+      expressions: [
+        makeSlider("m1", "m_{1}", m1, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("m2", "m_{2}", m2, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("F", "F", F, { min: 1, max: 30, step: 1 }),
+        makeSlider("mu", "\\mu", mu, { min: 0, max: 1, step: 0.05 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+        { id: "accel", latex: "a=\\frac{F}{m_{1}+m_{2}}-\\mu g", hidden: true },
+        // Ground line
+        { id: "ground", latex: "(-2,0)", color: C.BLACK, pointStyle: "CROSS" },
+        // Block 1 (left, pulled by F)
+        { id: "block1", latex: "(\\frac{1}{2}at^{2},\\ 0.5)", color: C.RED, label: "m_{1}", showLabel: true },
+        // Rope connecting blocks
+        { id: "rope", latex: `(\\frac{1}{2}at^{2}+u2,\\ 0.5)`, parametricDomain: { min: "0", max: "1" }, color: C.GRAY },
+        // Block 2 (right)
+        { id: "block2", latex: `(\\frac{1}{2}at^{2}+2,\\ 0.5)`, color: C.BLUE, label: "m_{2}", showLabel: true },
+        // Applied force F on block1
+        buildForceVector("force_F", "\\frac{1}{2}at^{2}", "0.5", "-2", "0", C.GREEN, "F"),
+        // Friction on block1
+        buildForceVector("force_f1", "\\frac{1}{2}at^{2}", "0.5", "1.5", "0", C.ORANGE, "f_{1}"),
+        // Friction on block2
+        buildForceVector("force_f2", "\\frac{1}{2}at^{2}+2", "0.5", "1.5", "0", C.ORANGE, "f_{2}"),
+        // Tension between blocks
+        buildForceVector("force_T", "\\frac{1}{2}at^{2}", "0.5", "1.5", "0", C.PURPLE, "T"),
+      ],
+      viewport: { left: -4, right: dMax + 6, bottom: -1, top: 3 },
+    };
+  },
+
+  /** 竖直弹簧振子 */
+  vertical_spring: (kv) => {
+    const k = kvLookup(kv, ["k"], 20);
+    const m = kvLookup(kv, ["m"], 2);
+    const A = kvLookup(kv, ["A"], 1.5);
+    const g = kvLookup(kv, ["g"], 9.8);
+    const omega = Math.sqrt(k / m);
+    const tMax = Math.ceil(2 * Math.PI / omega * 3 * 10) / 10;
+    const eqOffset = m * g / k;
+    return {
+      expressions: [
+        makeSlider("k", "k", k, { min: 5, max: 50, step: 5 }),
+        makeSlider("m", "m", m, { min: 0.5, max: 5, step: 0.5 }),
+        makeSlider("A", "A", A, { min: 0.5, max: 3, step: 0.1 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+        { id: "omega", latex: "\\omega=\\sqrt{\\frac{k}{m}}", hidden: true },
+        // Ceiling
+        { id: "ceiling", latex: "(-1,5)", color: C.GRAY },
+        { id: "ceiling2", latex: "(1,5)", color: C.GRAY },
+        // Spring: zigzag from ceiling to mass
+        { id: "spring_top", latex: `(0,\\ 5-u(5-\\frac{mg}{k}-A\\sin(\\omega t)))`, parametricDomain: { min: "0", max: "1" }, color: C.GRAY },
+        // Equilibrium line
+        { id: "eq_line", latex: `y=5-\\frac{mg}{k}`, color: C.GRAY, lineStyle: "DASHED" },
+        // Mass position
+        { id: "mass", latex: `(0,\\ 5-\\frac{mg}{k}-A\\sin(\\omega t))`, color: C.RED, label: "m", showLabel: true },
+        // Trail of mass (x-t graph style, offset to right)
+        { id: "trail", latex: `(s,\\ 5-\\frac{mg}{k}-A\\sin(\\omega s))`, parametricDomain: { min: "0", max: String(tMax) }, color: C.BLUE, lineStyle: "DASHED" },
+      ],
+      viewport: { left: -2, right: tMax * 0.3, bottom: 5 - eqOffset - A * 1.5, top: 6 },
+    };
+  },
+
+  /** 斜面上的连接体 */
+  inclined_connected: (kv) => {
+    const m1 = kvLookup(kv, ["m1"], 3);
+    const m2 = kvLookup(kv, ["m2"], 2);
+    const angle = kvLookup(kv, ["angle", "alpha"], 30);
+    const g = kvLookup(kv, ["g"], 9.8);
+    const mu = kvLookup(kv, ["mu"], 0);
+    const aRad = degToRad(angle);
+    // m2 on slope, m1 hanging off pulley at top
+    const accel = (m1 * g - m2 * g * (Math.sin(aRad) + mu * Math.cos(aRad))) / (m1 + m2);
+    const tMax = accel > 0.1 ? 3 : 5;
+    return {
+      expressions: [
+        makeSlider("m1", "m_{1}", m1, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("m2", "m_{2}", m2, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("angle", "\\alpha", angle, { min: 10, max: 60, step: 5 }),
+        makeSlider("mu", "\\mu", mu, { min: 0, max: 1, step: 0.05 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+        { id: "accel", latex: "a=\\frac{m_{1}g-m_{2}g(\\sin(\\alpha)+\\mu\\cos(\\alpha))}{m_{1}+m_{2}}", hidden: true },
+        // Slope
+        { id: "slope", latex: `(5s\\cos(\\alpha),\\ 5-5s\\sin(\\alpha))`, parametricDomain: { min: "0", max: "1" }, color: C.BLACK },
+        // Pulley at top of slope
+        { id: "pulley", latex: `(5\\cos(\\alpha),\\ 5-5\\sin(\\alpha))`, color: C.GRAY, pointStyle: "CROSS", label: "P", showLabel: true },
+        // Block m2 on slope
+        { id: "block2", latex: `(5\\cos(\\alpha)-\\frac{1}{2}at^{2}\\cos(\\alpha),\\ 5-5\\sin(\\alpha)+\\frac{1}{2}at^{2}\\sin(\\alpha))`, color: C.BLUE, label: "m_{2}", showLabel: true },
+        // Block m1 hanging
+        { id: "block1", latex: `(5\\cos(\\alpha),\\ 5-5\\sin(\\alpha)-\\frac{1}{2}at^{2})`, color: C.RED, label: "m_{1}", showLabel: true },
+      ],
+      viewport: { left: -2, right: 7, bottom: -3, top: 7 },
+    };
+  },
+
+  /** 追及与相遇问题 (匀变速追匀速) */
+  pursuit_problem: (kv) => {
+    const vA = kvLookup(kv, ["vA", "v1"], 8);
+    const aA = kvLookup(kv, ["aA", "a"], 0);
+    const vB = kvLookup(kv, ["vB", "v2"], 5);
+    const d0 = kvLookup(kv, ["d0", "d"], 15);
+    const tMax = 8;
+    const xMax = (vA + 0.5 * aA * tMax) * tMax;
+    return {
+      expressions: [
+        makeSlider("vA", "v_{A}", vA, { min: 0, max: 20, step: 1 }),
+        makeSlider("aA", "a_{A}", aA, { min: -3, max: 5, step: 0.5 }),
+        makeSlider("vB", "v_{B}", vB, { min: 0, max: 20, step: 1 }),
+        makeSlider("d0", "d_{0}", d0, { min: 5, max: 50, step: 5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        // A: starts at origin, velocity vA, acceleration aA
+        { id: "posA", latex: "(v_{A}t+\\frac{1}{2}a_{A}t^{2},\\ 1)", color: C.RED, label: "A", showLabel: true },
+        { id: "trailA", latex: `(v_{A}s+\\frac{1}{2}a_{A}s^{2},\\ 1)`, parametricDomain: { min: "0", max: String(tMax) }, color: C.RED, lineStyle: "DASHED" },
+        // B: starts at d0, constant velocity vB
+        { id: "posB", latex: "(d_{0}+v_{B}t,\\ -1)", color: C.BLUE, label: "B", showLabel: true },
+        { id: "trailB", latex: `(d_{0}+v_{B}s,\\ -1)`, parametricDomain: { min: "0", max: String(tMax) }, color: C.BLUE, lineStyle: "DASHED" },
+        // Distance between them
+        { id: "gap", latex: `(v_{A}t+\\frac{1}{2}a_{A}t^{2}+u(d_{0}+v_{B}t-v_{A}t-\\frac{1}{2}a_{A}t^{2}),\\ 1-2u)`, parametricDomain: { min: "0", max: "1" }, color: C.GREEN, lineStyle: "DASHED" },
+        // v-t graph for A (offset to right)
+        { id: "vt_A", latex: `y=v_{A}+a_{A}x`, color: C.RED, lineStyle: "DASHED" },
+        { id: "vt_B", latex: `y=v_{B}`, color: C.BLUE, lineStyle: "DASHED" },
+      ],
+      viewport: { left: -3, right: Math.min(xMax, 80), bottom: -3, top: 3 },
+    };
+  },
+
   lissajous: (kv) => {
     const Ax = kvLookup(kv, ["Ax"], 3);
     const Ay = kvLookup(kv, ["Ay"], 3);
