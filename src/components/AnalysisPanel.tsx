@@ -21,7 +21,7 @@ export default function AnalysisPanel({ analysis }: AnalysisPanelProps) {
       {analysis.ocrText && (
         <div>
           <h3 className="text-sm font-medium text-gray-800 mb-1">📝 识别文字</h3>
-          <p className="text-sm bg-gray-50 p-3 rounded-lg">{analysis.ocrText}</p>
+          <p className="text-sm bg-gray-50 text-gray-900 p-3 rounded-lg">{analysis.ocrText}</p>
         </div>
       )}
 

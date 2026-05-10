@@ -4,7 +4,7 @@
   "private": true,
   "description": "高中物理动态模型生成器 - 拍照识别物理题目，AI自动生成GeoGebra动态物理模型",
   "scripts": {
-    "dev": "next dev --turbopack -p 3000",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
