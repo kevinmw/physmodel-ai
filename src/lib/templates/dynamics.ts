@@ -468,4 +468,182 @@ export const dynamicsTemplates: Record<string, TemplateFn> = {
       viewport: { left: -fieldRange, right: fieldRange, bottom: -fieldRange * 0.7, top: fieldRange * 0.7 },
     };
   },
+
+  /** 2D弹性碰撞 */
+  "2d_collision": (kv) => {
+    const m1 = kvLookup(kv, ["m1"], 2);
+    const m2 = kvLookup(kv, ["m2"], 3);
+    const v1 = kvLookup(kv, ["v1", "v0"], 5);
+    const theta = kvLookup(kv, ["theta", "angle"], 30);
+    const e = kvLookup(kv, ["e"], 1); // coefficient of restitution
+    const tCol = 3;
+    const tMax = 8;
+    return {
+      expressions: [
+        makeSlider("m1", "m_{1}", m1, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("m2", "m_{2}", m2, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("v1", "v_{1}", v1, { min: 1, max: 10, step: 0.5 }),
+        makeSlider("theta", "\\theta", theta, { min: 0, max: 60, step: 5 }),
+        makeSlider("e", "e", e, { min: 0, max: 1, step: 0.1 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: "9.8", hidden: true },
+        // Pre-collision positions
+        { id: "b1_pre", latex: "(-5+v_{1}t,\\ 0)", color: C.RED },
+        { id: "b2_pre", latex: "(3,\\ 0)", color: C.BLUE },
+        // After collision velocities (using 1D formula with restitution)
+        { id: "v1f_def", latex: "v_{1f}=\\frac{m_{1}-e\\cdot m_{2}}{m_{1}+m_{2}}v_{1}", hidden: true },
+        { id: "v2f_def", latex: "v_{2f}=\\frac{(1+e)m_{1}}{m_{1}+m_{2}}v_{1}", hidden: true },
+        // B1 actual position with If
+        { id: "b1", latex: "(If(t<3,\\ -5+v_{1}t,\\ -5+3v_{1}+v_{1f}(t-3)),\\ 0)", color: C.RED, label: "m_{1}", showLabel: true },
+        // B2 deflected at angle theta
+        { id: "b2", latex: "(If(t<3,\\ 3,\\ 3+v_{2f}\\cos(\\theta)(t-3)),\\ If(t<3,\\ 0,\\ v_{2f}\\sin(\\theta)(t-3)))", color: C.BLUE, label: "m_{2}", showLabel: true },
+        // Trajectory traces
+        { id: "b1_trace", latex: "(x,\\ 0)", color: C.RED, lineStyle: "DASHED" },
+        { id: "b2_trace", latex: "(3+v_{2f}\\cos(\\theta)s,\\ v_{2f}\\sin(\\theta)s)", parametricDomain: { min: "0", max: "5" }, color: C.BLUE, lineStyle: "DASHED" },
+      ],
+      viewport: { left: -8, right: 12, bottom: -6, top: 6 },
+    };
+  },
+
+  /** 滚动与滑移转变 */
+  rolling_slipping: (kv) => {
+    const v0 = kvLookup(kv, ["v0", "v"], 8);
+    const mu = kvLookup(kv, ["mu"], 0.3);
+    const R = kvLookup(kv, ["R"], 0.5);
+    const g = kvLookup(kv, ["g"], 9.8);
+    const tSlide = v0 / (3 * mu * g);
+    const vRoll = 2 * v0 / 3;
+    const tMax = Math.ceil(tSlide * 3 * 10) / 10;
+    return {
+      expressions: [
+        makeSlider("v0", "v_{0}", v0, { min: 1, max: 15, step: 0.5 }),
+        makeSlider("mu", "\\mu", mu, { min: 0.1, max: 0.8, step: 0.05 }),
+        makeSlider("R", "R", R, { min: 0.2, max: 1, step: 0.1 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+        { id: "t_slide", latex: "t_{s}=\\frac{v_{0}}{3\\mu g}", hidden: true },
+        // Velocity during sliding phase (decreasing), then constant
+        { id: "v_cm", latex: "v=If(t<t_{s},\\ v_{0}-\\mu g t,\\ \\frac{2v_{0}}{3})", hidden: true },
+        // Position of center
+        { id: "ball", latex: "(v_{0}t-\\frac{1}{2}\\mu g t^{2},\\ R)", color: C.RED },
+        // Ground line
+        { id: "ground", latex: "y=0", color: C.BLACK },
+        // Friction direction during sliding
+        buildForceVector("force_f", "v_{0}t-\\frac{1}{2}\\mu g t^{2}", "R", "If(t<t_{s},\\ -1.5,\\ 0)", "0", C.ORANGE, "f"),
+        // Angular velocity indicator (rotation marker on ball)
+        { id: "marker", latex: "(v_{0}t-\\frac{1}{2}\\mu g t^{2}+R\\cos(5t),\\ R+R\\sin(5t))", color: C.BLUE },
+        // Phase label
+        { id: "phase", latex: "(2,\\ 2R+1)", color: C.PURPLE, label: "If(t<t_{s},\\ Sliding,\\ Rolling)", showLabel: true },
+      ],
+      viewport: { left: -1, right: v0 * tMax * 0.3, bottom: -0.5, top: 3 * R + 2 },
+    };
+  },
+
+  /** 物理摆（杆） */
+  physical_pendulum: (kv) => {
+    const L = kvLookup(kv, ["L", "l"], 2);
+    const theta0 = kvLookup(kv, ["theta0", "alpha0", "theta", "alpha"], 45);
+    const g = kvLookup(kv, ["g"], 9.8);
+    // For uniform rod pivoting at end: I = mL^2/3, omega0 = sqrt(3g/(2L))
+    const omega0 = Math.sqrt(3 * g / (2 * L));
+    const tMax = Math.ceil(2 * Math.PI / omega0 * 3 * 10) / 10;
+    return {
+      expressions: [
+        makeSlider("L", "L", L, { min: 0.5, max: 5, step: 0.1 }),
+        makeSlider("theta0", "\\theta_{0}", theta0, { min: 10, max: 90, step: 5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+        { id: "omega0_def", latex: "\\omega_{0}=\\sqrt{\\frac{3g}{2L}}", hidden: true },
+        { id: "I_def", latex: "I=\\frac{1}{3}mL^{2}", hidden: true },
+        // Pivot point
+        { id: "pivot", latex: "(0,0)", color: C.GREEN, pointStyle: "CROSS", label: "O", showLabel: true },
+        // Rod as a parametric line
+        { id: "rod", latex: "(Ls\\sin(\\theta_{0}\\cos(\\omega_{0}t)),\\ -Ls\\cos(\\theta_{0}\\cos(\\omega_{0}t)))", parametricDomain: { min: "0", max: "1" }, color: C.BLUE },
+        // End of rod (center of mass for uniform rod at L/2)
+        { id: "end", latex: "(L\\sin(\\theta_{0}\\cos(\\omega_{0}t)),\\ -L\\cos(\\theta_{0}\\cos(\\omega_{0}t)))", color: C.RED },
+        // Center of mass marker (at L/2)
+        { id: "cm", latex: "(\\frac{L}{2}\\sin(\\theta_{0}\\cos(\\omega_{0}t)),\\ -\\frac{L}{2}\\cos(\\theta_{0}\\cos(\\omega_{0}t)))", color: C.PURPLE, label: "CM", showLabel: true },
+        // Trajectory of end
+        { id: "trail", latex: "(L\\sin(\\theta_{0}\\cos(\\omega_{0}s)),\\ -L\\cos(\\theta_{0}\\cos(\\omega_{0}s)))", parametricDomain: { min: "0", max: String(tMax) }, color: C.BLUE, lineStyle: "DASHED" },
+        // Gravity force at CM
+        buildForceVector("force_g", "\\frac{L}{2}\\sin(\\theta_{0}\\cos(\\omega_{0}t))", "-\\frac{L}{2}\\cos(\\theta_{0}\\cos(\\omega_{0}t))", "0", "-1.5", C.PURPLE, "mg"),
+      ],
+      viewport: { left: -L * 1.3, right: L * 1.3, bottom: -L * 1.4, top: L * 0.3 },
+    };
+  },
+
+  /** 大角度单摆 */
+  large_angle_pendulum: (kv) => {
+    const L = kvLookup(kv, ["L", "l"], 2);
+    const theta0 = kvLookup(kv, ["theta0", "alpha0", "theta", "alpha"], 90);
+    const g = kvLookup(kv, ["g"], 9.8);
+    // For large angles, period increases. Approximate with: T ~ T0 * (1 + theta0^2/16 + ...)
+    const omega0 = Math.sqrt(g / L);
+    // Use an approximation for large angle: theta(t) ~ theta0 * cn(omega0*t) where cn is Jacobi elliptic
+    // In Desmos we approximate with sum of harmonics
+    const tMax = Math.ceil(2 * Math.PI / omega0 * 3 * 10) / 10;
+    return {
+      expressions: [
+        makeSlider("L", "L", L, { min: 0.5, max: 5, step: 0.1 }),
+        makeSlider("theta0", "\\theta_{0}", theta0, { min: 10, max: 170, step: 5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+        { id: "omega0_def", latex: "\\omega_{0}=\\sqrt{\\frac{g}{L}}", hidden: true },
+        // Large angle: use Fourier series approximation for actual motion
+        // theta(t) ~ theta0*(a1*cos(w*t) + a3*cos(3w*t) + a5*cos(5w*t))
+        // where a1, a3, a5 are functions of theta0
+        { id: "k_def", latex: "k=\\sin\\left(\\frac{\\theta_{0}}{2}\\right)", hidden: true },
+        { id: "theta_approx", latex: "\\theta(t)=\\theta_{0}\\left(\\cos(\\omega_{0}t)+\\frac{k^{2}}{4}(\\cos(\\omega_{0}t)-\\cos(3\\omega_{0}t))\\right)", hidden: true },
+        // Pivot
+        { id: "pivot", latex: "(0,0)", color: C.GREEN, pointStyle: "CROSS", label: "O", showLabel: true },
+        // String
+        { id: "string", latex: "(Ls\\sin(\\theta(t)),\\ -Ls\\cos(\\theta(t)))", parametricDomain: { min: "0", max: "1" }, color: C.GRAY },
+        // Bob
+        { id: "bob", latex: "(L\\sin(\\theta(t)),\\ -L\\cos(\\theta(t)))", color: C.RED },
+        // Trail
+        { id: "trail", latex: "(L\\sin(\\theta(t)),\\ -L\\cos(\\theta(t)))", parametricDomain: { min: "0", max: String(tMax) }, color: C.BLUE, lineStyle: "DASHED" },
+        // Compare with small angle approximation (dashed)
+        { id: "small_angle", latex: "(L\\sin(\\theta_{0}\\cos(\\omega_{0}s)),\\ -L\\cos(\\theta_{0}\\cos(\\omega_{0}s)))", parametricDomain: { min: "0", max: String(tMax) }, color: C.ORANGE, lineStyle: "DASHED" },
+        // Labels
+        { id: "label_exact", latex: `(L+0.5,\\ 0.5)`, color: C.BLUE, label: "Large\\ angle", showLabel: true },
+        { id: "label_small", latex: `(L+0.5,\\ -0.5)`, color: C.ORANGE, label: "Small\\ angle", showLabel: true },
+        buildForceVector("force_g", "L\\sin(\\theta(t))", "-L\\cos(\\theta(t))", "0", "-1.5", C.PURPLE, "mg"),
+      ],
+      viewport: { left: -L * 1.3, right: L * 1.8, bottom: -L * 1.4, top: L * 0.5 },
+    };
+  },
+
+  /** 堆叠球下落（超级球效应） */
+  stacked_ball: (kv) => {
+    const h = kvLookup(kv, ["h"], 2);
+    const g = kvLookup(kv, ["g"], 9.8);
+    const tImpact = Math.sqrt(2 * h / g);
+    const tMax = Math.ceil(tImpact * 4 * 10) / 10;
+    // For n balls stacked (equal mass), top ball velocity after bounce = (3^n - 1)/(3^n + 1) * v_impact ~ v * (2n-1)/n simplified
+    // 2 balls: v_top = 3v, height = 9h
+    // 3 balls: v_top ~ 7v, height = 49h
+    // 4 balls: v_top ~ 15v
+    return {
+      expressions: [
+        makeSlider("h", "h", h, { min: 0.5, max: 5, step: 0.5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+        { id: "t_impact", latex: "t_{i}=\\sqrt{\\frac{2h}{g}}", hidden: true },
+        { id: "v_impact", latex: "v_{i}=\\sqrt{2gh}", hidden: true },
+        // Ground
+        { id: "ground", latex: "y=0", color: C.BLACK },
+        // Ball 1 (bottom) - bounces back with v1 = -v_impact (simplified)
+        { id: "b1", latex: "(0,\\ If(t<t_{i},\\ h-\\frac{1}{2}gt^{2},\\ \\frac{1}{2}g(t-t_{i})^{2}))", color: C.RED, label: "m_{1}", showLabel: true },
+        // Ball 2 (top) - launched upward with 3*v_impact
+        { id: "v_top", latex: "v_{top}=3v_{i}", hidden: true },
+        { id: "h_top", latex: "h_{top}=\\frac{v_{top}^{2}}{2g}", hidden: true },
+        { id: "b2", latex: "(0.3,\\ If(t<t_{i},\\ h+0.3-\\frac{1}{2}gt^{2},\\ h+0.3+v_{top}(t-t_{i})-\\frac{1}{2}g(t-t_{i})^{2}))", color: C.BLUE, label: "m_{2}", showLabel: true },
+        // Max height marker
+        { id: "max_h", latex: `(0.3,\\ h+h_{top})`, color: C.PURPLE, pointStyle: "CROSS", label: "9h!", showLabel: true },
+        // Labels
+        { id: "label_9h", latex: `(1,\\ h+h_{top}/2)`, color: C.BLUE, label: "9h", showLabel: true },
+      ],
+      viewport: { left: -2, right: 3, bottom: -0.5, top: h * 10 + 2 },
+    };
+  },
 };

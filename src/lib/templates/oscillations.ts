@@ -347,4 +347,48 @@ export const oscillationsTemplates: Record<string, TemplateFn> = {
       viewport: { left: -5, right: 12, bottom: -yMax, top: yMax },
     };
   },
+
+  /** 质量落上弹簧 */
+  mass_spring_drop: (kv) => {
+    const m = kvLookup(kv, ["m"], 1);
+    const k = kvLookup(kv, ["k"], 20);
+    const h = kvLookup(kv, ["h"], 2);
+    const g = kvLookup(kv, ["g"], 9.8);
+    const omega = Math.sqrt(k / m);
+    const xEq = m * g / k; // equilibrium compression
+    // Mass falls from h, hits spring at y=0, velocity at impact = sqrt(2gh)
+    const vImpact = Math.sqrt(2 * g * h);
+    // SHM around equilibrium: amplitude = sqrt(xEq^2 + vImpact^2/omega^2)
+    const A = Math.sqrt(xEq * xEq + vImpact * vImpact / (omega * omega));
+    const tMax = Math.ceil(2 * Math.PI / omega * 3 * 10) / 10;
+    return {
+      expressions: [
+        makeSlider("m", "m", m, { min: 0.5, max: 5, step: 0.5 }),
+        makeSlider("k", "k", k, { min: 5, max: 50, step: 5 }),
+        makeSlider("h", "h", h, { min: 0.5, max: 5, step: 0.5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "g_def", latex: `g=${g}`, hidden: true },
+        { id: "omega_def", latex: "\\omega=\\sqrt{\\frac{k}{m}}", hidden: true },
+        { id: "xeq_def", latex: "x_{eq}=\\frac{mg}{k}", hidden: true },
+        { id: "v_impact", latex: "v_{0}=\\sqrt{2gh}", hidden: true },
+        // Time to fall
+        { id: "t_fall", latex: "t_{f}=\\sqrt{\\frac{2h}{g}}", hidden: true },
+        // Amplitude of oscillation
+        { id: "A_def", latex: "A=\\sqrt{x_{eq}^{2}+\\frac{v_{0}^{2}}{\\omega^{2}}}", hidden: true },
+        // Natural spring rest position
+        { id: "spring_rest", latex: "y=0", color: C.GRAY, lineStyle: "DASHED" },
+        // Equilibrium position
+        { id: "eq_pos", latex: `(0.5,\\ ${-xEq})`, color: C.GREEN, pointStyle: "CROSS", label: "x_{eq}", showLabel: true },
+        // Phase 1: Free fall
+        { id: "ball_fall", latex: "(0,\\ h-\\frac{1}{2}gt^{2})", color: C.RED },
+        // Spring (zigzag, drawn as line from 0 to mass when in contact)
+        { id: "spring_line", latex: `(0,\\ u(If(t<t_{f},\\ 0,\\ -x_{eq}+A\\cos(\\omega(t-t_{f})-\\frac{\\pi}{2}))))`, parametricDomain: { min: "0", max: "1" }, color: C.ORANGE },
+        // Phase 2: SHM after contact
+        { id: "ball_shm", latex: "(0,\\ If(t<t_{f},\\ h-\\frac{1}{2}gt^{2},\\ -x_{eq}+A\\cos(\\omega(t-t_{f})-\\frac{\\pi}{2})))", color: C.RED },
+        // Trajectory trace
+        { id: "trace", latex: `(s-3,\\ If(s<t_{f},\\ h-\\frac{1}{2}gs^{2},\\ -x_{eq}+A\\cos(\\omega(s-t_{f})-\\frac{\\pi}{2})))`, parametricDomain: { min: "0", max: String(tMax) }, color: C.BLUE, lineStyle: "DASHED" },
+      ],
+      viewport: { left: -1, right: 2, bottom: -(xEq + A) * 1.3, top: h * 1.3 },
+    };
+  },
 };

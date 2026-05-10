@@ -259,4 +259,109 @@ export const emTemplates: Record<string, TemplateFn> = {
       viewport: { left: -6, right: 6, bottom: -5, top: 5 },
     };
   },
+
+  /** LC振荡电路 */
+  lc_circuit: (kv) => {
+    const Cval = kvLookup(kv, ["C", "c"], 1);
+    const Lval = kvLookup(kv, ["L", "l"], 1);
+    const Q0 = kvLookup(kv, ["Q0", "Q", "q0"], 5);
+    const omega0 = 1 / Math.sqrt(Lval * Cval);
+    const tMax = Math.ceil(2 * Math.PI / omega0 * 3 * 10) / 10;
+    return {
+      expressions: [
+        makeSlider("C", "C", Cval, { min: 0.1, max: 5, step: 0.1 }),
+        makeSlider("L", "L", Lval, { min: 0.1, max: 5, step: 0.1 }),
+        makeSlider("Q0", "Q_{0}", Q0, { min: 1, max: 10, step: 0.5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "omega_def", latex: "\\omega=\\frac{1}{\\sqrt{LC}}", hidden: true },
+        // Charge on capacitor
+        { id: "q_graph", latex: "y=Q_{0}\\cos(\\omega t)", color: C.RED },
+        // Current through inductor
+        { id: "i_graph", latex: "y=-Q_{0}\\omega\\sin(\\omega t)", color: C.BLUE, lineStyle: "DASHED" },
+        // Capacitor energy: EC = Q^2/(2C)
+        { id: "ec_def", latex: "E_{C}=\\frac{Q_{0}^{2}\\cos^{2}(\\omega t)}{2C}", hidden: true },
+        // Inductor energy: EL = LI^2/2
+        { id: "el_def", latex: "E_{L}=\\frac{LQ_{0}^{2}\\omega^{2}\\sin^{2}(\\omega t)}{2}", hidden: true },
+        // Total energy (constant)
+        { id: "et_def", latex: "E_{T}=\\frac{Q_{0}^{2}}{2C}", hidden: true },
+        // Energy bars (shifted to right panel)
+        { id: "e_cap_bar", latex: `(t,\\ \\frac{Q_{0}^{2}\\cos^{2}(\\omega t)}{2C})`, color: C.RED },
+        { id: "e_ind_bar", latex: `(t,\\ \\frac{LQ_{0}^{2}\\omega^{2}\\sin^{2}(\\omega t)}{2})`, color: C.BLUE, lineStyle: "DASHED" },
+        // Labels
+        { id: "q_label", latex: `(-0.5,\\ ${Q0})`, color: C.RED, label: "q(t)", showLabel: true },
+        { id: "i_label", latex: `(-0.5,\\ ${-Q0 * omega0})`, color: C.BLUE, label: "I(t)", showLabel: true },
+      ],
+      viewport: { left: -1, right: tMax * 1.1, bottom: -Q0 * omega0 * 1.3, top: Q0 * 1.3 },
+    };
+  },
+
+  /** 法拉第电磁感应定律 */
+  faraday_law: (kv) => {
+    const B = kvLookup(kv, ["B"], 1);
+    const v = kvLookup(kv, ["v", "v0"], 2);
+    const R = kvLookup(kv, ["R"], 5);
+    const w = kvLookup(kv, ["w", "L", "l"], 2);
+    const tMax = 8;
+    return {
+      expressions: [
+        makeSlider("B", "B", B, { min: 0.5, max: 3, step: 0.5 }),
+        makeSlider("v", "v", v, { min: 0.5, max: 5, step: 0.5 }),
+        makeSlider("R", "R", R, { min: 1, max: 20, step: 1 }),
+        makeSlider("w", "w", w, { min: 0.5, max: 4, step: 0.5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        // Magnetic field region (shown as shaded box from x=2 to x=6)
+        { id: "field_left", latex: "x=2", color: C.BLUE, lineStyle: "DASHED" },
+        { id: "field_right", latex: "x=6", color: C.BLUE, lineStyle: "DASHED" },
+        { id: "field_label", latex: "(4,\\ 4)", color: C.BLUE, label: "B\\odot", showLabel: true },
+        // Loop position (moving right at velocity v)
+        { id: "loop_left", latex: "(vt,\\ u\\cdot w-\\frac{w}{2})", parametricDomain: { min: "0", max: "1" }, color: C.RED },
+        { id: "loop_right", latex: "(vt+w,\\ u\\cdot w-\\frac{w}{2})", parametricDomain: { min: "0", max: "1" }, color: C.RED },
+        { id: "loop_top", latex: "(vt+u\\cdot w,\\ \\frac{w}{2})", parametricDomain: { min: "0", max: "1" }, color: C.RED },
+        { id: "loop_bot", latex: "(vt+u\\cdot w,\\ -\\frac{w}{2})", parametricDomain: { min: "0", max: "1" }, color: C.RED },
+        // Induced EMF = -dPhi/dt = B*w*v (when entering/exiting field region)
+        { id: "emf_def", latex: "\\varepsilon=Bwv", hidden: true },
+        { id: "i_def", latex: "I=\\frac{\\varepsilon}{R}", hidden: true },
+        // EMF graph (shifted down)
+        { id: "emf_graph", latex: "y=If(vt+w<2,\\ 0,\\ If(vt<6,\\ Bwv,\\ If(vt+w<6,\\ -Bwv,\\ 0)))-5", color: C.ORANGE },
+        { id: "zero_line", latex: "y=-5", color: C.GRAY, lineStyle: "DASHED" },
+        { id: "emf_label", latex: `(-1,\\ ${-5 + B * w * v})`, color: C.ORANGE, label: "\\varepsilon", showLabel: true },
+      ],
+      viewport: { left: -2, right: v * tMax + 2, bottom: -10, top: 5 },
+    };
+  },
+
+  /** 电容器充放电 */
+  capacitor: (kv) => {
+    const V = kvLookup(kv, ["V", "V0", "E"], 10);
+    const R = kvLookup(kv, ["R"], 5);
+    const Cval = kvLookup(kv, ["C", "c"], 1);
+    const tau = R * Cval;
+    const tMax = Math.ceil(tau * 5 * 10) / 10;
+    const Imax = V / R;
+    return {
+      expressions: [
+        makeSlider("V", "V", V, { min: 1, max: 24, step: 1 }),
+        makeSlider("R", "R", R, { min: 1, max: 20, step: 1 }),
+        makeSlider("C", "C", Cval, { min: 0.5, max: 5, step: 0.5 }),
+        { id: "t", latex: "t=0", sliderBounds: { min: 0, max: tMax, step: 0.05 }, playing: true },
+        { id: "tau_def", latex: "\\tau=RC", hidden: true },
+        // Capacitor voltage during charging: Vc = V(1 - e^(-t/RC))
+        { id: "vc_graph", latex: "y=V\\left(1-e^{-\\frac{t}{RC}}\\right)", color: C.RED },
+        // Current during charging: I = (V/R)e^(-t/RC)
+        { id: "i_graph", latex: "y=\\frac{V}{R}e^{-\\frac{t}{RC}}", color: C.BLUE, lineStyle: "DASHED" },
+        // Source voltage line
+        { id: "v_source", latex: "y=V", color: C.GREEN, lineStyle: "DASHED" },
+        // Tau marker
+        { id: "tau_marker", latex: "(RC,\\ 0)", color: C.PURPLE, pointStyle: "CROSS", label: "\\tau", showLabel: true },
+        { id: "tau_63", latex: `(RC,\\ ${V * 0.632})`, color: C.RED, pointStyle: "CROSS", label: "63.2\\%", showLabel: true },
+        // Energy stored
+        { id: "energy_def", latex: "E=\\frac{1}{2}CV_{c}^{2}=\\frac{CV^{2}}{2}\\left(1-e^{-\\frac{t}{RC}}\\right)^{2}", hidden: true },
+        // Labels
+        { id: "vc_label", latex: `(-0.5,\\ ${V})`, color: C.RED, label: "V_{C}", showLabel: true },
+        { id: "i_label", latex: `(-0.5,\\ ${Imax})`, color: C.BLUE, label: "I", showLabel: true },
+        { id: "v_label", latex: `(${tMax * 0.8},\\ ${V * 1.05})`, color: C.GREEN, label: "V_{source}", showLabel: true },
+      ],
+      viewport: { left: -1, right: tMax * 1.1, bottom: -0.5, top: V * 1.3 },
+    };
+  },
 };
